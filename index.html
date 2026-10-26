@@ -15,17 +15,17 @@ body{background:radial-gradient(ellipse at 50% -30%,#38533d 0%,#151f19 48%,#080c
 .eyebrow b{color:#dfd0a2}.header-actions{display:flex;gap:8px}
 button{appearance:none;cursor:pointer;font-family:inherit;color:#f4e8c9;border:1px solid #998259;background:linear-gradient(#5f5840,#302e25 46%,#1a211b 48%,#3a4231);padding:9px 13px;border-radius:7px;font-size:12px;font-weight:900;letter-spacing:.7px;text-transform:uppercase;box-shadow:inset 0 1px 0 #b2a47c,0 2px 9px #0008;touch-action:manipulation}
 button:hover{filter:brightness(1.19)}button:focus-visible{outline:2px solid #73d7ff;outline-offset:3px}button:active{transform:translateY(1px)}
-.shell{max-width:1035px;margin:0 auto 15px;padding:9px;display:grid;grid-template-columns:minmax(0,1fr) 205px;align-items:stretch;gap:8px;background:linear-gradient(125deg,#b9ac80 0,#4c4c36 4%,#1b231b 15%,#7b7953 97%,#c0b283);border:1px solid #b6a87a;border-radius:13px;box-shadow:0 0 0 4px #121c15,0 19px 70px #000b,inset 0 2px 2px #fff6}
-.field-wrap{position:relative;min-width:0;overflow:hidden;background:#304528;border:3px solid #151f13;border-radius:5px;box-shadow:inset 0 0 0 2px #aab086,0 0 0 1px #a2a57e;user-select:none}
+.shell{max-width:1035px;margin:0 auto 15px;padding:6px;display:grid;grid-template-columns:minmax(0,1fr) 205px;align-items:stretch;gap:5px;background:linear-gradient(125deg,#667367,#222c25 5%,#181f1a 95%,#505c50);border:1px solid #5b6457;border-radius:7px;box-shadow:0 0 0 3px #111914,0 19px 65px #000c,inset 0 1px 1px #ffffff35}
+.field-wrap{position:relative;min-width:0;overflow:hidden;background:#719251;border:1px solid #101a0f;border-radius:2px;box-shadow:inset 0 0 0 1px #cbd08b65;user-select:none}
 #game{display:block;width:100%;height:auto;aspect-ratio:720/760;touch-action:none;cursor:crosshair}
-.field-wrap:after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,#0000 0,#0000 3px,#08180610 4px);opacity:.35;mix-blend-mode:multiply}
-.sidebar{position:relative;min-width:0;padding:15px 12px 12px;background:radial-gradient(ellipse at 20% 0,#3d4034 0,#181d1b 43%,#060c0d 100%);border:1px solid #8b815d;border-radius:5px;box-shadow:inset 0 0 0 3px #101310,inset 0 0 25px #000b;display:flex;flex-direction:column;gap:13px}
-.logo{text-align:center;margin:2px -5px 2px;line-height:.85;font:bold clamp(23px,3.2vw,37px)/.9 Georgia,Times New Roman,serif;letter-spacing:-1.7px;color:#d4e5cc;-webkit-text-stroke:.4px #1b4028;text-shadow:1px 2px 0 #465734,2px 4px 1px #09120b,0 -1px 1px #fff8,0 0 21px #6dd28a4a;transform:scaleY(1.15)}
-.logo span{display:block;color:#cddde4;font-style:italic;font-size:44px;margin-top:3px;text-shadow:1px 2px 0 #426272,0 0 14px #8bdafe}
+.field-wrap:after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,#0000 0,#0000 4px,#0f23180c 5px);opacity:.12;mix-blend-mode:multiply}
+.sidebar{position:relative;min-width:0;padding:14px 11px 12px;background:radial-gradient(ellipse at 30% 0,#252824 0,#090f10 34%,#020405 100%);border:1px solid #353a31;border-radius:2px;box-shadow:inset 0 0 0 2px #0b1110,inset 0 0 27px #000d;display:flex;flex-direction:column;gap:10px}
+.logo{text-align:center;margin:7px -5px 7px;line-height:1;font:italic 900 31px/.95 Georgia,Times New Roman,serif;letter-spacing:-2px;color:#e8b75b;-webkit-text-stroke:.5px #51320b;text-shadow:1px 2px 0 #74450d,2px 3px 1px #050605,0 -1px 1px #fff2aa,0 0 15px #bc7c1c44;transform:rotate(-3deg) scaleY(1.12)}
+.logo span{display:inline;color:#ed9e30;font-style:italic;font-size:40px;margin-left:1px;text-shadow:1px 2px 0 #713f0a,0 0 13px #ecbd5e80}
 .ornament{height:10px;background:linear-gradient(90deg,transparent,#ac985e 25%,#f0d593 50%,#ac985e 75%,transparent);clip-path:polygon(0 45%,44% 45%,48% 5%,52% 5%,56% 45%,100% 45%,100% 58%,56% 58%,52% 98%,48% 98%,44% 58%,0 58%)}
-.stat{padding:9px 9px 8px;background:#02080b;border:1px solid #4b523d;border-radius:4px;box-shadow:inset 0 0 17px #000,0 2px 2px #0005}
-.stat-label{color:#c4b787;display:block;font:bold 10px Verdana,sans-serif;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
-.stat-value{font:bold 24px/1.2 Georgia,serif;color:#86d4fa;text-shadow:0 0 10px #1386e580,1px 2px 0 #153653;display:block;white-space:nowrap}
+.stat{padding:9px 4px 11px;background:transparent;border:0;border-bottom:1px solid #364038;border-radius:0;box-shadow:none}
+.stat-label{color:#ddb66a;display:block;font:bold 11px Georgia,serif;letter-spacing:1.2px;text-transform:none;margin-bottom:4px;text-shadow:0 1px #090600}
+.stat-value{font:bold 27px/1.12 Georgia,serif;color:#7dcad4;text-shadow:0 0 8px #53c0d75c,1px 2px 0 #125260;display:block;white-space:nowrap}
 .two-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.two-stats .stat-value{font-size:19px}.two-stats .stat{padding:9px 5px;text-align:center}
 .life-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;min-height:21px}.crystal-life{display:inline-block;background:linear-gradient(145deg,#d3f6ff,#129ade 40%,#112d85 80%);width:13px;height:19px;clip-path:polygon(50% 0,99% 35%,78% 100%,24% 100%,0 35%);filter:drop-shadow(0 0 4px #3faef0)}
 #powerLabel{font-size:13px;color:#cae4bc;min-height:35px;line-height:1.5}.power-track{height:7px;border-radius:5px;background:#020807;box-shadow:inset 0 1px 3px #000;overflow:hidden}.power-track>div{width:0;height:100%;background:linear-gradient(90deg,#4fb0b2,#bfe97b);transition:width .2s}
@@ -103,12 +103,14 @@ html,body{overscroll-behavior:none}
   </aside>
 </main>
 <footer class="hud-bottom"><span class="tagline">A lush, shadowed, fast-paced homage to a classic Macintosh favorite.</span><span id="touchHint">On mobile: drag your finger and the crystal auto-fires.</span><span id="highScore">BEST 000000</span></footer>
+<script src="art.js"></script>
 <script>
 "use strict";
 (function(){
 const canvas=document.getElementById("game"),ctx=canvas.getContext("2d",{alpha:false});
 const W=720,H=760,STEP=30,PLAY_TOP=H-178,TAU=Math.PI*2;
 const $=id=>document.getElementById(id);
+const artwork=window.ApeironArt;
 let mode="menu",wave=1,score=0,lives=3,bonus=4500,multiplier=1;
 let best=0;try{best=Number(localStorage.getItem("apeiron-tribute-best"))||0}catch(e){}
 let player={x:360,y:701,tx:360,ty:701,inv:0,rapid:0,spread:0,shield:0};
@@ -136,29 +138,14 @@ const sfx={
  bonus(){tone(780,650,.19,"square",.045)}
 };
 const [grass,gx]=makeOff(W,H);
-function seedGrass(){let seed=123456789;const random=()=>((seed=(1664525*seed+1013904223)>>>0)/4294967296);const base=gx.createLinearGradient(0,0,W,H);base.addColorStop(0,"#54764c");base.addColorStop(.5,"#466541");base.addColorStop(1,"#2a4e3c");gx.fillStyle=base;gx.fillRect(0,0,W,H);
-for(let n=0;n<27000;n++){const x=random()*W,y=random()*H,size=.3+random()*2;const green=Math.floor(64+random()*57);gx.fillStyle="rgba("+(green-30)+","+green+","+(green-27)+","+(0.035+random()*.16)+")";gx.fillRect(x,y,size,size)}
-for(let n=0;n<7400;n++){const x=random()*W,y=random()*H,length=3+random()*8;gx.strokeStyle=random()>.55?"rgba(189,206,139,.11)":"rgba(8,46,22,.14)";gx.lineWidth=.5+random()*.6;gx.beginPath();gx.moveTo(x,y);gx.quadraticCurveTo(x-2,y-length/2,x+(random()-.5)*7,y-length);gx.stroke()}
-for(let n=0;n<105;n++){const x=random()*W,y=random()*H;gx.fillStyle="rgba(199,204,141,.09)";gx.beginPath();gx.ellipse(x,y,random()*4+.4,random()*1.2+.4,0,0,TAU);gx.fill()}
-const mist=gx.createRadialGradient(W*.46,H*.16,55,W*.43,H*.43,560);mist.addColorStop(0,"#bedc9c15");mist.addColorStop(1,"#00000009");gx.fillStyle=mist;gx.fillRect(0,0,W,H)}
+function seedGrass(){artwork.renderGround(gx,W,H,wave)}
 seedGrass();
-function mushroomSprite(kind){const [c,g]=makeOff(76,76);g.translate(38,37);
-g.fillStyle="#10190e65";g.beginPath();g.ellipse(3,20,21,7,-.08,0,TAU);g.fill();
-const stem=g.createLinearGradient(-7,0,12,7);stem.addColorStop(0,"#464634");stem.addColorStop(.4,"#c7c3a2");stem.addColorStop(.7,"#ded5a8");stem.addColorStop(1,"#625a3d");g.fillStyle=stem;g.beginPath();g.moveTo(-8,-1);g.bezierCurveTo(-8,10,-10,17,-11,19);g.quadraticCurveTo(0,26,11,18);g.bezierCurveTo(7,9,7,2,8,-1);g.closePath();g.fill();
-g.strokeStyle="#8d8455";g.lineWidth=1;g.beginPath();g.moveTo(-5,3);g.lineTo(-7,17);g.stroke();
-const cap=g.createRadialGradient(-6,-16,2,1,-5,30),cols=kind==="toxic"?["#ffdcad","#d42b29","#631d1e"]:kind==="magic"?["#fad6fc","#8839c2","#30174f"]:["#f1d5a5","#964739","#302b25"];cap.addColorStop(0,cols[0]);cap.addColorStop(.5,cols[1]);cap.addColorStop(1,cols[2]);g.fillStyle=cap;g.beginPath();g.moveTo(-23,0);g.bezierCurveTo(-21,-27,-9,-31,1,-31);g.bezierCurveTo(15,-30,25,-17,25,-1);g.quadraticCurveTo(2,9,-23,0);g.fill();
-g.strokeStyle="#1c1a16b8";g.lineWidth=2.2;g.stroke();
-g.fillStyle="#f4e1b5";g.globalAlpha=kind==="normal"?.82:.92;
-for(const [x,y,r] of [[-12,-12,4],[2,-23,5],[12,-12,3.5],[-4,-3,2.3],[18,-4,2.3]]){g.beginPath();g.ellipse(x,y,r,r*.65,-.2,0,TAU);g.fill()}g.globalAlpha=1;
-g.strokeStyle="#ffffff75";g.lineWidth=1.5;g.beginPath();g.arc(-2,-9,18,3.9,5.2);g.stroke();
-if(kind==="magic"){g.shadowBlur=14;g.shadowColor="#db64ff";g.strokeStyle="#e6abff";g.beginPath();g.arc(0,-6,27,3.5,5.7);g.stroke()}return c}
-const mushroomImages={normal:mushroomSprite("normal"),toxic:mushroomSprite("toxic"),magic:mushroomSprite("magic")};
-function addMushroom(x,y,kind,hp){if(mushrooms.length>265)return;const nearby=mushrooms.some(m=>distance(m.x,m.y,x,y)<23);if(nearby)return;mushrooms.push({x:clamp(x,23,W-23),y:clamp(y,28,H-43),kind:kind||"normal",hp:hp||2,shimmer:rnd(0,TAU)})}
-function seedMushrooms(){mushrooms=[];for(let i=0;i<135;i++){let x=rnd(30,W-30),y=rnd(77,H-53);if(y>PLAY_TOP&&Math.abs(x-360)<95)continue;addMushroom(x,y,chance(.045)?"magic":"normal",chance(.24)?3:2)}}
+function addMushroom(x,y,kind,hp){if(mushrooms.length>265)return;const nearby=mushrooms.some(m=>distance(m.x,m.y,x,y)<20);if(nearby)return;mushrooms.push({x:clamp(x,23,W-23),y:clamp(y,28,H-43),kind:kind||"normal",hp:hp||2,shimmer:rnd(0,TAU),variant:Math.floor(rnd(0,6))})}
+function seedMushrooms(){mushrooms=[];for(let i=0;i<150;i++){let x=rnd(30,W-30),y=rnd(77,H-53);if(y>PLAY_TOP&&Math.abs(x-360)<95)continue;addMushroom(x,y,chance(.045)?"magic":"normal",chance(.24)?3:2)}}
 function newGroup(segments,dir){if(!segments.length)return;groups.push({segments,dir:dir||1,speed:clamp(6+wave*.42,6,15),acc:0,lower:segments[0].y>PLAY_TOP-28,vdir:1,color:rnd(-8,8)})}
 function createPentipede(){groups=[];const length=Math.min(10+Math.floor(wave*.6),18);const arr=[];for(let i=0;i<length;i++)arr.push({x:W-120-i*STEP,y:82});newGroup(arr,1)}
-function resetGame(){mode="playing";score=0;wave=1;lives=3;multiplier=1;bonus=4500;elapsed=0;spawnTimer=4;flash=0;shots=[];particles=[];pickups=[];critters=[];player={x:360,y:701,tx:360,ty:701,inv:2,rapid:0,spread:0,shield:0};seedMushrooms();createPentipede();hideOverlay();syncHud();audioReady();sfx.wave()}
-function nextWave(){wave++;bonus=4500+wave*75;multiplier=1;spawnTimer=Math.max(2.5,5-wave*.06);player.inv=1.7;player.rapid=Math.max(player.rapid,0);critters=[];pickups=[];for(let i=0;i<Math.min(18,5+wave);i++)addMushroom(rnd(30,W-30),rnd(85,H-120),chance(.07)?"magic":"normal",2);createPentipede();mode="playing";showFloating("WAVE "+wave);sfx.wave()}
+function resetGame(){mode="playing";score=0;wave=1;seedGrass();lives=3;multiplier=1;bonus=4500;elapsed=0;spawnTimer=4;flash=0;shots=[];particles=[];pickups=[];critters=[];player={x:360,y:701,tx:360,ty:701,inv:2,rapid:0,spread:0,shield:0};seedMushrooms();createPentipede();hideOverlay();syncHud();audioReady();sfx.wave()}
+function nextWave(){wave++;seedGrass();bonus=4500+wave*75;multiplier=1;spawnTimer=Math.max(2.5,5-wave*.06);player.inv=1.7;player.rapid=Math.max(player.rapid,0);critters=[];pickups=[];for(let i=0;i<Math.min(18,5+wave);i++)addMushroom(rnd(30,W-30),rnd(85,H-120),chance(.07)?"magic":"normal",2);createPentipede();mode="playing";showFloating("WAVE "+wave);sfx.wave()}
 function waveComplete(){if(mode!=="playing")return;mode="between";waveTimer=2.3;let awarded=Math.floor(bonus*multiplier);score+=awarded;saveBest();showFloating("BONUS +"+awarded.toLocaleString());sfx.wave();syncHud()}
 function loseLife(){if(player.inv>0||mode!=="playing")return;if(player.shield>0){player.shield=0;player.inv=1;burst(player.x,player.y,"#97e7ff",30,180);sfx.power();return}lives--;burst(player.x,player.y,"#52bdfa",65,280);sfx.hurt();flash=.32;player.inv=2.7;player.rapid=0;player.spread=0;player.x=360;player.y=701;player.tx=360;player.ty=701;syncHud();if(lives<=0){mode="over";saveBest();showOverlay("GAME OVER","You made it to <strong>wave "+wave+"</strong> with <strong>"+score.toLocaleString()+" points.</strong><br>Best: "+best.toLocaleString(),"PLAY AGAIN",resetGame)}}
 function addParticle(x,y,vx,vy,life,size,color,gravity){particles.push({x,y,vx,vy,life,max:life,size,color,gravity:gravity===undefined?65:gravity})}
@@ -182,25 +169,24 @@ function tickBetween(dt){waveTimer-=dt;updateParticles(dt);if(waveTimer<=0)nextW
 function syncHud(){$("score").textContent=String(score).padStart(6,"0");$("bonus").textContent=String(Math.floor(bonus)).padStart(4,"0");$("wave").textContent=String(wave).padStart(2,"0");$("multi").textContent="×"+multiplier;$("lives").innerHTML='<span class="crystal-life"></span>'.repeat(Math.max(0,lives));$("highScore").textContent="BEST "+String(best).padStart(6,"0");
 const powers=[["RAPID PLASMA",player.rapid,11],["TRIPLE PLASMA",player.spread,12],["SHIELD",player.shield,14]].filter(x=>x[1]>0);const active=powers.length?powers[0]:null;$("powerLabel").textContent=active?active[0]+"  "+Math.ceil(active[1])+"s":"NORMAL PLASMA";$("powerFill").style.width=active?(100*active[1]/active[2])+"%":"0%"}
 function shadow(x,y,w,h,alpha){ctx.fillStyle="rgba(5,15,8,"+alpha+")";ctx.beginPath();ctx.ellipse(x+5,y+13,w,h,-.1,0,TAU);ctx.fill()}
-function drawMushrooms(){for(const m of mushrooms){const pulse=m.kind==="magic"?1+Math.sin(frameTime*5+m.shimmer)*.09:1;shadow(m.x,m.y,11,4,.32);ctx.save();ctx.translate(m.x,m.y);ctx.scale(pulse,pulse);ctx.drawImage(mushroomImages[m.kind],-18,-23,36,36);if(m.hp===1){ctx.fillStyle="#0006";ctx.fillRect(-8,-6,4,2)}ctx.restore()}}
-function drawPentipedes(){for(const g of groups){for(let k=g.segments.length-1;k>=0;k--){const s=g.segments[k],head=k===0;shadow(s.x,s.y,16,5,.47);
-ctx.save();ctx.translate(s.x,s.y);ctx.rotate(Math.sin(frameTime*11-k*.7)*.08);
-for(const side of [-1,1]){ctx.lineWidth=2;ctx.strokeStyle="#6b6b2a";ctx.beginPath();ctx.moveTo(-7,side*5);ctx.lineTo(-15,side*10);ctx.lineTo(-19,side*13);ctx.moveTo(6,side*7);ctx.lineTo(13,side*10);ctx.lineTo(17,side*14);ctx.stroke()}
-const shell=ctx.createRadialGradient(-6,-8,2,2,4,19);shell.addColorStop(0,head?"#f1ee88":"#e4ec9b");shell.addColorStop(.3,head?"#83be58":"#9acb67");shell.addColorStop(.71,head?"#43874f":"#4e9061");shell.addColorStop(1,"#1b493b");
-ctx.fillStyle=shell;ctx.beginPath();ctx.ellipse(0,0,head?16:14,head?15:13,0,0,TAU);ctx.fill();ctx.strokeStyle="#23442c";ctx.lineWidth=1.7;ctx.stroke();
-ctx.fillStyle="#cadc79a8";ctx.beginPath();ctx.ellipse(-5,-7,7,3,-.3,0,TAU);ctx.fill();
-ctx.strokeStyle="#1d654786";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-7,8);ctx.quadraticCurveTo(0,4,8,8);ctx.stroke();
-if(head){ctx.fillStyle="#fef4af";ctx.beginPath();ctx.ellipse(-5,-2,4.5,5.5,0,0,TAU);ctx.ellipse(7,-2,4.5,5.5,0,0,TAU);ctx.fill();ctx.fillStyle="#1b302a";ctx.beginPath();ctx.arc(-4,-1,2,0,TAU);ctx.arc(8,-1,2,0,TAU);ctx.fill();ctx.strokeStyle="#accc63";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-7,-12);ctx.lineTo(-10,-21);ctx.moveTo(7,-12);ctx.lineTo(11,-21);ctx.stroke();for(const x of [-10,11]){ctx.fillStyle="#e5da80";ctx.beginPath();ctx.arc(x,-21,3,0,TAU);ctx.fill()}}
-ctx.restore()}}}
-function drawGecko(x,y,c){ctx.save();ctx.translate(x,y);ctx.scale(c.dir,1);shadow(0,0,29,7,.25);ctx.rotate(Math.sin(c.phase)*.15);ctx.strokeStyle="#2e6140";ctx.lineWidth=7;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(-17,0);ctx.bezierCurveTo(-45,-17,-48,21,-65,7);ctx.stroke();ctx.fillStyle="#9ecb4e";ctx.beginPath();ctx.ellipse(0,0,32,12,0,0,TAU);ctx.fill();ctx.fillStyle="#d8e985";ctx.beginPath();ctx.ellipse(19,-2,14,10,0,0,TAU);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(23,-6,4.5,0,TAU);ctx.fill();ctx.fillStyle="#18271b";ctx.beginPath();ctx.arc(24,-6,2,0,TAU);ctx.fill();for(const leg of [-1,1]){ctx.strokeStyle="#638f39";ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-13,leg*5);ctx.lineTo(-20,leg*18);ctx.moveTo(10,leg*6);ctx.lineTo(14,leg*20);ctx.stroke()}ctx.restore()}
-function drawScobster(x,y,c){ctx.save();ctx.translate(x,y);ctx.scale(c.dir,1);shadow(0,0,30,6,.32);for(const side of [-1,1]){ctx.strokeStyle="#8d3228";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(12,side*5);ctx.lineTo(30,side*13);ctx.lineTo(39,side*7);ctx.stroke();ctx.fillStyle="#d65c36";ctx.beginPath();ctx.ellipse(37,side*8,9,6,0,0,TAU);ctx.fill()}const body=ctx.createRadialGradient(-9,-9,1,4,4,30);body.addColorStop(0,"#ffe3a0");body.addColorStop(.4,"#df7d48");body.addColorStop(1,"#6d2928");ctx.fillStyle=body;ctx.beginPath();ctx.ellipse(0,0,23,16,0,0,TAU);ctx.fill();ctx.strokeStyle="#8c3c36";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-17,0);ctx.quadraticCurveTo(-35,-18,-29,-27);ctx.stroke();ctx.fillStyle="#e6e1c2";ctx.beginPath();ctx.arc(12,-5,5,0,TAU);ctx.fill();ctx.fillStyle="#1b1118";ctx.beginPath();ctx.arc(13,-5,2.5,0,TAU);ctx.fill();ctx.restore()}
-function drawCritters(){for(const c of critters){if(c.type==="gecko")drawGecko(c.x,c.y,c);else if(c.type==="scobster")drawScobster(c.x,c.y,c);else if(c.type==="flea"){shadow(c.x,c.y,12,4,.25);ctx.save();ctx.translate(c.x,c.y);ctx.rotate(Math.sin(c.phase)*.2);const g=ctx.createRadialGradient(-3,-7,1,0,0,16);g.addColorStop(0,"#f8eaad");g.addColorStop(.35,"#d78173");g.addColorStop(1,"#402036");ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(0,0,12,19,0,0,TAU);ctx.fill();ctx.strokeStyle="#c4b57d";for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(-8,i*9);ctx.lineTo(-19,i*12);ctx.moveTo(8,i*9);ctx.lineTo(19,i*12);ctx.stroke()}ctx.restore()}else{shadow(c.x,c.y,24,5,.24);const g=ctx.createLinearGradient(c.x,c.y-15,c.x,c.y+15);g.addColorStop(0,"#f2c4f2");g.addColorStop(.4,"#9760ba");g.addColorStop(1,"#32275d");ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(c.x,c.y,28,11,0,0,TAU);ctx.fill();ctx.fillStyle="#b1e6d9";ctx.beginPath();ctx.ellipse(c.x,c.y-9,14,9,0,Math.PI,TAU);ctx.fill();ctx.fillStyle="#e7efff";for(let i=-1;i<=1;i++){ctx.beginPath();ctx.arc(c.x+i*15,c.y+1,2,0,TAU);ctx.fill()}}}}
-function drawCrystal(){if(player.inv>0&&Math.sin(frameTime*26)<-.25)return;const x=player.x,y=player.y;ctx.save();ctx.translate(x,y);shadow(0,0,19,5,.55);if(player.shield>0){ctx.strokeStyle="#94eff0";ctx.lineWidth=2;ctx.shadowBlur=15;ctx.shadowColor="#53e9fa";ctx.beginPath();ctx.arc(0,0,31+Math.sin(frameTime*5)*2,0,TAU);ctx.stroke();ctx.shadowBlur=0}
-const glow=ctx.createRadialGradient(0,-1,3,0,0,32);glow.addColorStop(0,"#88ecff80");glow.addColorStop(1,"#25aeff00");ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,0,34,0,TAU);ctx.fill();
-ctx.shadowColor="#00aaff";ctx.shadowBlur=14;ctx.fillStyle="#053b77";ctx.beginPath();ctx.moveTo(0,-26);ctx.lineTo(20,-9);ctx.lineTo(14,14);ctx.lineTo(0,25);ctx.lineTo(-16,14);ctx.lineTo(-20,-9);ctx.closePath();ctx.fill();ctx.shadowBlur=0;
-function facet(points,color){ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(points[0],points[1]);for(let i=2;i<points.length;i+=2)ctx.lineTo(points[i],points[i+1]);ctx.closePath();ctx.fill()}
-facet([0,-26,-19,-9,-6,7],"#c8f7fe");facet([0,-26,-6,7,5,3],"#64d5fb");facet([0,-26,20,-9,5,3],"#2492d7");facet([-19,-9,-16,14,-6,7],"#3b9be4");facet([-6,7,-16,14,0,25],"#2b64ae");facet([-6,7,5,3,14,14,0,25],"#0863b5");facet([5,3,20,-9,14,14],"#125081");
-ctx.strokeStyle="#edffff";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(0,-26);ctx.lineTo(-6,7);ctx.lineTo(0,25);ctx.stroke();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,-11,3,0,TAU);ctx.fill();ctx.restore()}
+function drawMushrooms(){
+ for(const m of mushrooms){
+  const pulse=m.kind==="magic"?1+Math.sin(frameTime*5+m.shimmer)*.08:1;
+  ctx.fillStyle="rgba(18,29,13,.54)";
+  ctx.beginPath();ctx.ellipse(m.x+3,m.y+9,11.5,4,0,0,TAU);ctx.fill();
+  ctx.save();ctx.translate(m.x,m.y);ctx.scale(pulse,pulse);
+  if(m.kind==="magic"){
+   ctx.shadowBlur=8;ctx.shadowColor="#ca77ed";
+  }
+  ctx.drawImage(artwork.mushroom(m.kind,m.variant),-16,-20,32,32);
+  ctx.shadowBlur=0;
+  if(m.hp===1){ctx.fillStyle="rgba(36,21,16,.46)";ctx.fillRect(-4,-6,2.5,2)}
+  ctx.restore();
+ }
+}
+function drawPentipedes(){artwork.drawPentipedes(ctx,groups,frameTime)}
+function drawCritters(){artwork.drawCritters(ctx,critters,frameTime)}
+function drawCrystal(){artwork.drawCrystal(ctx,player,frameTime)}
 function drawShots(){for(const s of shots){ctx.strokeStyle="#b8faff";ctx.lineWidth=3.5;ctx.shadowBlur=11;ctx.shadowColor="#58ccff";ctx.beginPath();ctx.moveTo(s.x,s.y+12);ctx.lineTo(s.x-s.vx*.018,s.y-12);ctx.stroke();ctx.shadowBlur=0}}
 function drawPickups(){for(const p of pickups){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(Math.sin(frameTime*4+p.x)*.24);ctx.shadowBlur=12;ctx.shadowColor=p.type==="shield"?"#88faff":"#e9c051";ctx.fillStyle=p.type==="shield"?"#93dcf6":"#f5ca58";ctx.beginPath();ctx.ellipse(0,0,13,15,0,0,TAU);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle="#fff6c4";ctx.lineWidth=2;ctx.stroke();ctx.fillStyle="#8c6426";ctx.font="bold 14px Georgia";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(({rapid:"R",spread:"3",shield:"S",multi:"×",life:"+"})[p.type],0,1);ctx.restore()}}
 function drawParticles(){for(const p of particles){ctx.globalAlpha=Math.min(1,p.life/p.max);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life/p.max,0,TAU);ctx.fill()}ctx.globalAlpha=1}

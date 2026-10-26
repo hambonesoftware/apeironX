@@ -42,6 +42,29 @@ button:hover{filter:brightness(1.19)}button:focus-visible{outline:2px solid #73d
 #touchHint{display:none}
 @media(max-width:720px){.site-header{padding:12px 10px}.eyebrow{font-size:9px;letter-spacing:1.3px}.shell{grid-template-columns:1fr;gap:6px;padding:6px;margin:0 5px 13px}.sidebar{grid-row:1;display:grid;grid-template-columns:.95fr 1fr 1fr 1.45fr 1fr;gap:5px;padding:8px 7px;align-items:center}.logo{font-size:20px;letter-spacing:-1px;margin:0}.logo span{font-size:23px;display:inline;margin-left:4px}.ornament,.sidebar .key-info,.sidebar .side-foot,.sidebar #powerBox{display:none}.sidebar .stat{padding:5px 4px}.stat-label{font-size:8px;letter-spacing:.7px}.stat-value{font-size:17px}.two-stats{gap:5px}.two-stats .stat-value{font-size:16px}.two-stats .stat{padding:4px}.header-actions button{padding:7px 8px;font-size:10px}.hud-bottom{font-size:10px}.dialog{padding:20px 14px}.dialog h2{font-size:39px}#touchHint{display:block;color:#b3caa8}}
 @media(max-width:400px){.sidebar{grid-template-columns:.85fr 1fr 1fr 1.4fr 1fr}.logo{font-size:17px}.logo span{font-size:19px}.stat-value{font-size:15px}.two-stats .stat-value{font-size:14px}}
+html,body{overscroll-behavior:none}
+.field-wrap,#game{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+@media (hover:none) and (pointer:coarse){
+  html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+  body{position:fixed;inset:0;height:100dvh;display:flex;flex-direction:column}
+  .site-header{flex:none;width:100%}
+  .shell{width:calc(100% - 10px);flex:0 1 auto;min-height:0;max-height:calc(100dvh - 90px);overflow:hidden}
+  .field-wrap{max-height:calc(100dvh - 155px)}
+  #game{width:auto;max-width:100%;max-height:calc(100dvh - 163px);margin:0 auto}
+  .hud-bottom{flex:none;width:100%;padding-top:4px;padding-bottom:8px}
+}
+@media (hover:none) and (pointer:coarse) and (orientation:landscape) and (max-height:600px){
+  .site-header{padding:4px 10px}
+  .shell{height:calc(100dvh - 43px);max-height:none;grid-template-columns:minmax(0,1fr) 174px;grid-template-rows:minmax(0,1fr);margin:0 auto}
+  .field-wrap{grid-row:1;grid-column:1;min-height:0;max-height:none;display:flex;align-items:center;justify-content:center}
+  #game{height:100%;width:auto;max-width:100%;max-height:100%;margin:auto}
+  .sidebar{grid-row:1;grid-column:2;display:flex;gap:5px;padding:7px;overflow:hidden}
+  .sidebar .key-info,.sidebar .side-foot,.sidebar #powerBox{display:none}
+  .logo{font-size:23px;margin:3px 0}
+  .logo span{font-size:23px}
+  .sidebar .stat{padding:5px}
+  .hud-bottom{display:none}
+}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto;transition:none!important}}
 </style>
 </head>
@@ -190,8 +213,13 @@ canvas.addEventListener("pointerdown",ev=>{if(mode!=="playing")return;ev.prevent
 canvas.addEventListener("pointermove",ev=>{if(mode!=="playing")return;if(ev.pointerType==="mouse"||firing){const p=pointerPos(ev);player.tx=p.x;player.ty=p.y;}});
 canvas.addEventListener("pointerup",()=>{firing=false;pointerIsTouch=false});canvas.addEventListener("pointercancel",()=>{firing=false;pointerIsTouch=false});window.addEventListener("pointerup",()=>{firing=false;pointerIsTouch=false});
 window.addEventListener("keydown",ev=>{if(["Space","ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(ev.code))ev.preventDefault();if(ev.code==="KeyP"||ev.code==="Escape"){if(!ev.repeat)togglePause();return}if(ev.code==="Enter"&&mode==="menu"){resetGame();return}if(ev.code==="Enter"&&mode==="over"){resetGame();return}held.add(ev.code);if(ev.code==="Space")audioReady()});
-window.addEventListener("keyup",ev=>held.delete(ev.code));window.addEventListener("blur",()=>{held.clear();firing=false;if(mode==="playing")togglePause()});
-function togglePause(){if(mode==="playing"){mode="paused";showOverlay("PAUSED","The mushroom patch will wait for you.","RESUME GAME",()=>{audioReady();mode="playing";hideOverlay()})}else if(mode==="paused"){mode="playing";hideOverlay()}}
+window.addEventListener("keyup",ev=>held.delete(ev.code));// Browser chrome, notification shade, or focus changes must not pause a live round.
+window.addEventListener("blur",()=>{held.clear();firing=false});
+document.addEventListener("visibilitychange",()=>{held.clear();firing=false;lastTime=performance.now()});
+// Keep mobile dragging inside the game; prevent Safari bounce and pull-to-refresh.
+document.addEventListener("touchmove",ev=>{if(ev.cancelable)ev.preventDefault()},{passive:false});
+canvas.addEventListener("contextmenu",ev=>ev.preventDefault());
+function togglePause(){if(mode==="playing"){mode="paused";$("pauseBtn").textContent="▶ RESUME";showOverlay("PAUSED","The mushroom patch will wait for you.","RESUME GAME",()=>{audioReady();mode="playing";$("pauseBtn").textContent="Ⅱ PAUSE";hideOverlay()})}else if(mode==="paused"){mode="playing";$("pauseBtn").textContent="Ⅱ PAUSE";hideOverlay()}}
 $("pauseBtn").addEventListener("click",togglePause);
 $("soundBtn").addEventListener("click",()=>{mute=!mute;$("soundBtn").textContent=mute?"♫ SOUND OFF":"♫ SOUND ON";if(!mute)audioReady()});
 $("primaryBtn").addEventListener("click",resetGame);

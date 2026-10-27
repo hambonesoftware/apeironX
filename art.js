@@ -63,35 +63,65 @@
       g.fill();
     }
     // Pale interconnected cracks and soil edges are a prominent X-era field detail.
-    const cell = 43, nCols = Math.ceil(w / cell) + 2, nRows = Math.ceil(h / cell) + 2;
-    const vertices = [];
-    for (let row = 0; row < nRows; row++) {
+    const spacing = 53;
+    const sites = [], cols = Math.ceil(w / spacing) + 3, rows = Math.ceil(h / spacing) + 3;
+    for (let row = 0; row < rows; row++) {
       const line = [];
-      for (let col = 0; col < nCols; col++) {
-        line.push({ x: col * cell - cell / 2 + (rng() - .5) * 19, y: row * cell - cell / 2 + (rng() - .5) * 19 });
+      for (let col = 0; col < cols; col++) {
+        line.push({
+          x: (col - 1 + (row % 2) * .5) * spacing + (rng() - .5) * 25,
+          y: (row - 1) * spacing + (rng() - .5) * 25
+        });
       }
-      vertices.push(line);
+      sites.push(line);
     }
-    g.lineCap = "round";
-    for (let row = 0; row < nRows - 1; row++) {
-      for (let col = 0; col < nCols - 1; col++) {
-        const a = vertices[row][col], b = vertices[row][col + 1], c = vertices[row + 1][col];
-        const y = (a.y + b.y + c.y) / 3;
-        const visibility = .12 + .24 * Math.max(0, y / h);
-        g.strokeStyle = "rgba(238,244,173," + visibility + ")";
-        g.lineWidth = .65 + rng() * .65;
-        g.beginPath();
-        g.moveTo(a.x, a.y);
-        g.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 + rng() * 3, b.x, b.y);
-        g.moveTo(a.x, a.y);
-        g.lineTo(c.x, c.y);
-        g.stroke();
-        g.strokeStyle = "rgba(32,68,34," + visibility * .28 + ")";
-        g.lineWidth = .6;
-        g.beginPath();
-        g.moveTo(a.x + 2, a.y + 2);
-        g.lineTo(c.x + 2, c.y + 2);
-        g.stroke();
+    // Irregular Voronoi borders produce natural dried-earth cells, without a grid.
+    // Every polygon is clipped against nearby sites along perpendicular bisectors.
+    function clipHalfPlane(poly, origin, other) {
+      if (!poly.length) return poly;
+      const dx = other.x - origin.x, dy = other.y - origin.y;
+      const limit = ((other.x * other.x + other.y * other.y) -
+        (origin.x * origin.x + origin.y * origin.y)) / 2;
+      const inside = p => p.x * dx + p.y * dy <= limit;
+      const intersection = (p, q) => {
+        const start = p.x * dx + p.y * dy - limit;
+        const end = q.x * dx + q.y * dy - limit;
+        const t = Math.abs(start - end) < 1e-8 ? 0 : start / (start - end);
+        return { x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t };
+      };
+      const out = [];
+      for (let i = 0; i < poly.length; i++) {
+        const cur = poly[i], next = poly[(i + 1) % poly.length];
+        const good = inside(cur), nextGood = inside(next);
+        if (good) out.push(cur);
+        if (good !== nextGood) out.push(intersection(cur, next));
+      }
+      return out;
+    }
+    g.lineJoin = "round";
+    for (let row = 1; row < rows - 1; row++) {
+      for (let col = 1; col < cols - 1; col++) {
+        const site = sites[row][col];
+        let poly = [{x:0,y:0},{x:w,y:0},{x:w,y:h},{x:0,y:h}];
+        for (let dr = -2; dr <= 2; dr++) {
+          for (let dc = -2; dc <= 2; dc++) {
+            if (!dr && !dc) continue;
+            const r = row + dr, c = col + dc;
+            if (r < 0 || c < 0 || r >= rows || c >= cols) continue;
+            poly = clipHalfPlane(poly, site, sites[r][c]);
+            if (!poly.length) break;
+          }
+          if (!poly.length) break;
+        }
+        if (poly.length < 3) continue;
+        const lower = Math.max(0, (site.y / h - .25) / .75);
+        const brightness = (wave > 10 ? .28 : .19) * lower;
+        if (brightness < .008) continue;
+        g.beginPath();g.moveTo(poly[0].x,poly[0].y);
+        for (let i = 1; i < poly.length; i++) g.lineTo(poly[i].x,poly[i].y);
+        g.closePath();
+        g.strokeStyle = "rgba(239,246,169," + brightness + ")";
+        g.lineWidth = .8 + rng() * .48;g.stroke();
       }
     }
     // Multi-tone grains, grass filaments and pebble flecks form the 16-bit texture.

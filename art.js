@@ -3,7 +3,7 @@
 (function () {
   "use strict";
   const TAU = Math.PI * 2;
-  const imageCache = { mushrooms: {}, pentipedes: {}, enemies: {}, crystal: null };
+  const imageCache = { mushrooms: {}, pentipedes: {}, pickups: {}, enemies: {}, crystal: null };
   function seeded(value) {
     let state = value >>> 0;
     return function () {
@@ -234,17 +234,22 @@
 
   function pentipedeSprite(isHead, phase) {
     return sprite(100, 100, g => {
-      const rng = seeded(9108 + (isHead ? 901 : 103) + phase * 19);
+      const rng = seeded(9108 + (isHead ? 901 : 103));
       g.save(); g.translate(50, 52);
-      // Three pairs of sneaker-like feet, swinging opposite ways.
-      const swing = [0, 4, -3, 2][phase];
+      // Continuous, alternating six-legged gait; 16 coherent cyclic keyframes.
+      const walk = phase * TAU / 16;
       for (let pair = -1; pair <= 1; pair++) {
         for (const side of [-1, 1]) {
-          const lx = pair * 15 + (pair === 0 ? swing : -swing) * .7;
-          const ly = side * 23;
+          const stride = walk + (pair + 1) * 2.05 + (side > 0 ? Math.PI : 0);
+          const swing = Math.sin(stride) * 5;
+          const lift = Math.max(0, Math.cos(stride)) * 2.7;
+          const lx = pair * 15 + swing;
+          const ly = side * (22 + lift);
           g.strokeStyle = "#3b4523";
           g.lineWidth = 4.4;
-          g.beginPath(); g.moveTo(lx * .65, side * 11); g.quadraticCurveTo(lx, side * 18, lx, ly); g.stroke();
+          g.lineCap = "round";
+          g.beginPath(); g.moveTo(pair * 9, side * 11);
+          g.quadraticCurveTo(lx - swing * .28, side * 19, lx, ly); g.stroke();
           ellipse(g, lx + 4, ly + side * 2, 8, 5, "#d5b652", side * -.26);
           g.strokeStyle = "#fff4bd";
           g.lineWidth = 1.5;
@@ -279,10 +284,11 @@
       if (isHead) {
         // Long antennae, large bright eyes and slightly mischievous expression.
         g.strokeStyle = "#387725"; g.lineWidth = 3.2;
-        g.beginPath(); g.moveTo(-13, -27); g.quadraticCurveTo(-20, -41, -28, -45);
-        g.moveTo(13, -29); g.quadraticCurveTo(21, -47, 29, -47); g.stroke();
-        ellipse(g, -28, -45, 4, 4, "#f0d456");
-        ellipse(g, 29, -47, 4, 4, "#f0d456");
+        const twitch = Math.sin(walk) * 2.1;
+        g.beginPath(); g.moveTo(-13, -27); g.quadraticCurveTo(-20 + twitch, -41, -28 + twitch, -45);
+        g.moveTo(13, -29); g.quadraticCurveTo(21 - twitch, -47, 29 - twitch, -47); g.stroke();
+        ellipse(g, -28 + twitch, -45, 4, 4, "#f0d456");
+        ellipse(g, 29 - twitch, -47, 4, 4, "#f0d456");
         ellipse(g, -11, -8, 11, 13, "#f6efb6");
         ellipse(g, 16, -9, 11, 13, "#f6efb6");
         ellipse(g, -8, -6, 5, 7, "#163d1e");
@@ -295,22 +301,161 @@
       g.restore();
     });
   }
+
+  function pentipedePosition(group, index) {
+    const s = group.segments[index];
+    if (!s) return null;
+    if (!Number.isFinite(s.prevX) || !Number.isFinite(s.prevY))
+      return { x: s.x, y: s.y };
+    const x1 = s.prevX, y1 = s.prevY, x2 = s.x, y2 = s.y;
+    if (Math.abs(x2 - x1) + Math.abs(y2 - y1) < .01)
+      return { x: x2, y: y2 };
+    const t = Math.max(0, Math.min(1, group.acc));
+    const x0 = Number.isFinite(s.olderX) ? s.olderX : x1;
+    const y0 = Number.isFinite(s.olderY) ? s.olderY : y1;
+    const ahead = index === 0 ? group.next : group.segments[index - 1];
+    const x3 = ahead ? ahead.x : x2 + (x2 - x1);
+    const y3 = ahead ? ahead.y : y2 + (y2 - y1);
+    // Catmull-Rom tangent continuity rounds a turn without changing the grid AI.
+    const t2 = t * t, t3 = t2 * t;
+    const h00 = 2 * t3 - 3 * t2 + 1;
+    const h10 = t3 - 2 * t2 + t;
+    const h01 = -2 * t3 + 3 * t2;
+    const h11 = t3 - t2;
+    const x = h00 * x1 + h10 * (x2 - x0) * .5 + h01 * x2 + h11 * (x3 - x1) * .5;
+    const y = h00 * y1 + h10 * (y2 - y0) * .5 + h01 * y2 + h11 * (y3 - y1) * .5;
+    // Restrict corner rounding to a few pixels so feet avoid walls and mushrooms.
+    return {
+      x: Math.max(Math.min(x1, x2) - 3.5, Math.min(Math.max(x1, x2) + 3.5, x)),
+      y: Math.max(Math.min(y1, y2) - 3.5, Math.min(Math.max(y1, y2) + 3.5, y))
+    };
+  }
   function drawPentipedes(g, groups, t) {
     for (const group of groups) {
       for (let i = group.segments.length - 1; i >= 0; i--) {
         const s = group.segments[i], isHead = i === 0;
-        const phase = (Math.floor(t * 13) + i) & 3;
-        const key = (isHead ? "head" : "body") + phase;
-        if (!imageCache.pentipedes[key]) imageCache.pentipedes[key] = pentipedeSprite(isHead, phase);
+        const pos = pentipedePosition(group, i);
+        const walk = t * 10.5 - i * .76;
+        const frameBase = Math.floor(walk);
+        const blend = walk - frameBase;
+        const frame = ((frameBase % 16) + 16) % 16;
+        const after = (frame + 1) % 16;
+        const prefix = isHead ? "head" : "body";
+        const key = prefix + frame, nextKey = prefix + after;
+        if (!imageCache.pentipedes[key]) imageCache.pentipedes[key] = pentipedeSprite(isHead, frame);
+        if (!imageCache.pentipedes[nextKey]) imageCache.pentipedes[nextKey] = pentipedeSprite(isHead, after);
+        const dx = s.x - s.prevX, dy = s.y - s.prevY;
+        if (Math.abs(dx) > 1) s.facing = Math.sign(dx);
+        if (!s.facing) s.facing = group.dir;
+        const bob = .55 * Math.sin(walk * TAU / 16);
         g.fillStyle = "rgba(16,35,13,.47)";
-        g.beginPath(); g.ellipse(s.x + 3, s.y + 12, 15.2, 5.6, 0, 0, TAU); g.fill();
+        g.beginPath(); g.ellipse(pos.x + 3, pos.y + 12, 15.2, 5.6, 0, 0, TAU); g.fill();
         g.save();
-        g.translate(s.x, s.y);
-        if (group.dir < 0) g.scale(-1, 1);
-        g.rotate(Math.sin(t * 10 + i) * .025);
+        g.translate(pos.x, pos.y + bob);
+        if (s.facing < 0) g.scale(-1, 1);
+        // Subtle banking while rounding a corner; the sprite stays front-facing.
+        g.rotate(Math.max(-.11, Math.min(.11, dy / 30 * .08)) + Math.sin(walk * TAU / 16) * .012);
+        g.globalAlpha = 1 - blend;
         g.drawImage(imageCache.pentipedes[key], -19, -20, 38, 38);
+        if (blend > .001) {
+          g.globalAlpha = blend;
+          g.drawImage(imageCache.pentipedes[nextKey], -19, -20, 38, 38);
+        }
         g.restore();
       }
+    }
+  }
+
+  function pickupSprite(type) {
+    const schemes = {
+      rapid:  ["#ffdf83", "#e8a135", "#854014", "#ffeaa7", "R"],
+      spread: ["#f8b6ff", "#b95cce", "#51256f", "#ffdcff", "3"],
+      shield: ["#c0faff", "#5ebddf", "#155a91", "#edffff", "S"],
+      multi:  ["#fff6b8", "#f2bb35", "#935111", "#ffffff", "×2"],
+      life:   ["#b9ffc3", "#4ac47a", "#16634c", "#e2ffe6", "+"]
+    };
+    const [bright, mid, dark, glint, glyph] = schemes[type] || schemes.multi;
+    return sprite(96, 96, g => {
+      g.save();
+      g.translate(48, 48);
+      g.shadowColor = mid;
+      g.shadowBlur = 17;
+      ellipse(g, 0, 0, 31, 31, mid);
+      g.shadowBlur = 0;
+      const rim = g.createLinearGradient(-30, -30, 30, 30);
+      rim.addColorStop(0, bright);rim.addColorStop(.23, mid);
+      rim.addColorStop(.55, dark);rim.addColorStop(.72, bright);
+      rim.addColorStop(1, dark);
+      g.fillStyle = rim;
+      g.beginPath();g.arc(0, 0, 30, 0, TAU);g.fill();
+      g.strokeStyle = "#17140a92";g.lineWidth = 2.5;g.stroke();
+      g.strokeStyle = glint;g.lineWidth = 2.2;
+      g.beginPath();g.arc(0, 0, 26, .7, 4.6);g.stroke();
+      // Notched, machined edge and an embossed medallion.
+      for (let i = 0; i < 24; i++) {
+        const theta = i * TAU / 24;
+        g.strokeStyle = i % 2 ? glint : dark;
+        g.lineWidth = 1.8;
+        g.beginPath();
+        g.moveTo(Math.cos(theta) * 27, Math.sin(theta) * 27);
+        g.lineTo(Math.cos(theta) * 29.5, Math.sin(theta) * 29.5);
+        g.stroke();
+      }
+      const face = g.createRadialGradient(-9, -12, 3, 0, 0, 24);
+      face.addColorStop(0, bright);face.addColorStop(.55, mid);face.addColorStop(1, dark);
+      g.fillStyle = face;g.beginPath();g.arc(0, 0, 22, 0, TAU);g.fill();
+      g.strokeStyle = glint;g.lineWidth = 1.5;g.stroke();
+      g.textAlign = "center";g.textBaseline = "middle";
+      g.font = type === "multi" ? "bold 24px Georgia" : "bold 32px Georgia";
+      g.fillStyle = dark;g.fillText(glyph, 1.6, 3);
+      g.fillStyle = glint;g.fillText(glyph, 0, .4);
+      // Diagonal glassy glare and two pinprick highlights.
+      g.save();
+      g.beginPath();g.arc(0, 0, 21, 0, TAU);g.clip();
+      g.fillStyle = "#ffffff3e";
+      g.beginPath();g.ellipse(-9, -16, 23, 5, -.55, 0, TAU);g.fill();
+      g.restore();
+      ellipse(g, -14, -17, 2.7, 1.9, "#ffffffdb", -.3);
+      ellipse(g, 16, 13, 1.7, 1.3, glint);
+      g.restore();
+    });
+  }
+  function drawPickups(g, pickups, t) {
+    for (const p of pickups) {
+      if (!imageCache.pickups[p.type]) imageCache.pickups[p.type] = pickupSprite(p.type);
+      const y = p.y + Math.sin(t * 6 + p.phase) * 1.8;
+      const spin = t * 5.2 + p.spin;
+      const squash = .28 + .72 * Math.abs(Math.cos(spin));
+      const glow = p.type === "multi" ? "#ffdf55" : p.type === "shield" ? "#8beaff" :
+        p.type === "spread" ? "#e995ff" : p.type === "life" ? "#97f8aa" : "#ffc76a";
+      g.save();
+      g.globalAlpha = Math.max(0, Math.min(1, (14 - p.time) * .72));
+      g.fillStyle = "rgba(22,22,12,.24)";
+      g.beginPath();g.ellipse(p.x + 3, p.y + 20, 15, 4.5, 0, 0, TAU);g.fill();
+      g.translate(p.x, y);
+      // Orbiting glints stay visible even when the medallion turns edge-on.
+      for (let i = 0; i < 4; i++) {
+        const theta = spin * .7 + i * TAU / 4;
+        const radius = 23 + Math.sin(spin * .8 + i * 1.4) * 2.5;
+        const x = Math.cos(theta) * radius, sy = Math.sin(theta) * radius;
+        g.fillStyle = i % 2 ? "#fff6cbaa" : "#ffffffcc";
+        g.beginPath();g.arc(x, sy, i === 0 ? 2.5 : 1.6, 0, TAU);g.fill();
+      }
+      g.save();
+      g.rotate(Math.sin(spin * .65) * .13);
+      g.scale(squash, 1);
+      g.shadowBlur = 17;
+      g.shadowColor = glow;
+      g.drawImage(imageCache.pickups[p.type], -21, -21, 42, 42);
+      g.restore();
+      const sparkle = (Math.cos(spin) * .5 + .5) ** 7;
+      if (sparkle > .12) {
+        g.strokeStyle = "rgba(255,255,238," + (sparkle * .88) + ")";
+        g.lineWidth = 1.7;
+        g.beginPath();g.moveTo(-19, -18);g.lineTo(-19, -30);
+        g.moveTo(-25, -24);g.lineTo(-13, -24);g.stroke();
+      }
+      g.restore();
     }
   }
 
@@ -438,6 +583,8 @@
     renderGround,
     mushroom,
     drawPentipedes,
+    pentipedePosition,
+    drawPickups,
     drawCritters,
     drawCrystal
   };

@@ -114,7 +114,8 @@ html,body{overscroll-behavior:none}
   </aside>
 </main>
 <footer class="hud-bottom"><span class="tagline">A lush, shadowed, fast-paced homage to a classic Macintosh favorite.</span><span id="touchHint">On mobile: drag your finger and the crystal auto-fires.</span><span id="highScore">BEST 000000</span></footer>
-<script src="art.js?v=20261027c"></script>
+<script src="art.js?v=20261101-living"></script>
+<script src="living-patch.js?v=20261101-v04"></script>
 <script>
 "use strict";
 (function(){
@@ -133,11 +134,8 @@ function makeOff(w,h){const c=document.createElement("canvas");c.width=w;c.heigh
 function saveBest(){if(score>best){best=score;try{localStorage.setItem("apeiron-tribute-best",String(best))}catch(e){}}}
 function showFloating(message,color){
  const f=$("floating");
- f.textContent=message;
- f.style.color=color||"#f8edaa";
- f.classList.remove("reward-bounce");
- void f.offsetWidth;
- f.classList.add("reward-bounce");
+ f.textContent=message;f.style.color=color||"#f8edaa";
+ f.classList.remove("reward-bounce");void f.offsetWidth;f.classList.add("reward-bounce");
  floatingTime=2.1;
 }
 function showOverlay(title,body,button,action){$("overlay").classList.remove("hidden");$("dialog").innerHTML='<div class="small">THROUGH THE LOOKING GLASS</div><h2>'+title+'</h2><p>'+body+'</p><button type="button" id="primaryBtn">'+button+'</button>';$("primaryBtn").addEventListener("click",action)}
@@ -154,13 +152,42 @@ const sfx={
  power(){[440,554,660,880].forEach((f,i)=>tone(f,f*1.05,.18,"triangle",.075,i*.075))},
  hurt(){tone(690,90,.55,"sawtooth",.09);noise(.32,.09)},
  wave(){[392,523,659,784].forEach((f,i)=>tone(f,f*1.01,.25,"triangle",.08,i*.11))},
- bonus(){tone(780,650,.19,"square",.045)}
+ bonus(){tone(780,650,.19,"square",.045)},
+ tumble(){tone(240,90,.18,"triangle",.035);noise(.07,.022)},
+ falling(){tone(820,190,.23,"triangle",.085);tone(1300,460,.18,"sine",.065,.05)},
+ reflect(){tone(1150,420,.13,"sine",.08);tone(1600,980,.13,"triangle",.03,.025)},
+ poison(){tone(245,65,.39,"sawtooth",.052);noise(.14,.032)},
+ magic(){[610,880,1220,1560].forEach((f,i)=>tone(f,f*1.12,.19,"sine",.07,i*.055))},
+ cleanse(){noise(.29,.06);tone(390,900,.35,"triangle",.08)},
+ guided(){tone(490,940,.19,"triangle",.07)},
+ critter(){tone(270,92,.26,"sawtooth",.075)},
+ saucer(){tone(940,210,.32,"sine",.08)},
+ alert(){tone(320,165,.18,"square",.06);tone(460,230,.23,"square",.06,.17)},
+ warning(){tone(120,86,.3,"sawtooth",.055)}
 };
+const living=window.LivingPatch.create({
+ state:()=>({mushrooms,groups,shots,pickups,critters,player,wave,elapsed,W,H,PLAY_TOP}),
+ score:n=>{score+=n*multiplier*(player.frenzy>0?10:1);saveBest();syncHud()},
+ show:(msg,color)=>showFloating(msg,color),
+ burst:(x,y,color,count,power)=>burst(x,y,color,count,power),
+ audio:key=>{if(sfx[key])sfx[key]()},
+ spawnSegment:(x,y,dir)=>newGroup([{x,y,prevX:x,prevY:y,olderX:x-dir*STEP,olderY:y}],dir),
+ position:(group,index)=>artwork.pentipedePosition(group,index)
+});
 const [grass,gx]=makeOff(W,H);
 function seedGrass(){artwork.renderGround(gx,W,H,wave)}
 seedGrass();
 function addMushroom(x,y,kind,hp){if(mushrooms.length>265)return;const nearby=mushrooms.some(m=>distance(m.x,m.y,x,y)<20);if(nearby)return;mushrooms.push({x:clamp(x,23,W-23),y:clamp(y,28,H-43),kind:kind||"normal",hp:hp||2,shimmer:rnd(0,TAU),variant:Math.floor(rnd(0,6))})}
-function seedMushrooms(){mushrooms=[];for(let i=0;i<150;i++){let x=rnd(30,W-30),y=rnd(77,H-53);if(y>PLAY_TOP&&Math.abs(x-360)<95)continue;addMushroom(x,y,chance(.045)?"magic":"normal",chance(.24)?3:2)}}
+function seedMushrooms(){
+ mushrooms=[];
+ for(let i=0;i<153;i++){
+  const x=rnd(30,W-30),y=rnd(77,H-53);
+  if(y>PLAY_TOP&&Math.abs(x-360)<95)continue;
+  const roll=Math.random();
+  const kind=roll<.025?"magic":roll<.073?"toxic":roll<.13?"reflector":"normal";
+  addMushroom(x,y,kind,chance(.24)?3:2);
+ }
+}
 function predictHeadCell(g){
  const head=g.segments[0],ahead=head.x+g.dir*STEP;
  const blocked=ahead<22||ahead>W-22||mushrooms.some(m=>Math.abs(m.x-ahead)<22&&Math.abs(m.y-head.y)<20);
@@ -182,24 +209,99 @@ function newGroup(segments,dir,phase=0){
  groups.push(group);
 }
 function createPentipede(){groups=[];const length=Math.min(10+Math.floor(wave*.6),18);const arr=[];for(let i=0;i<length;i++)arr.push({x:W-120-i*STEP,y:82});newGroup(arr,1)}
-function resetGame(){mode="playing";score=0;wave=1;seedGrass();lives=3;multiplier=1;bonus=4500;elapsed=0;spawnTimer=4;flash=0;shots=[];particles=[];pickups=[];critters=[];player={x:360,y:701,tx:360,ty:701,inv:2,rapid:0,spread:0,shield:0};seedMushrooms();createPentipede();hideOverlay();syncHud();audioReady();sfx.wave()}
-function nextWave(){wave++;seedGrass();bonus=4500+wave*75;multiplier=1;spawnTimer=Math.max(2.5,5-wave*.06);player.inv=1.7;player.rapid=Math.max(player.rapid,0);critters=[];pickups=[];for(let i=0;i<Math.min(18,5+wave);i++)addMushroom(rnd(30,W-30),rnd(85,H-120),chance(.07)?"magic":"normal",2);createPentipede();mode="playing";showFloating("WAVE "+wave);sfx.wave()}
+function resetGame(){
+ mode="playing";score=0;wave=1;lives=3;multiplier=1;bonus=4500;elapsed=0;
+ spawnTimer=6.2;flash=0;shotTimer=0;shots=[];particles=[];pickups=[];critters=[];
+ player={x:360,y:701,tx:360,ty:701,inv:2,rapid:0,spread:0,shield:0,guided:0,ricochet:0,frenzy:0};
+ living.reset(wave);seedGrass();seedMushrooms();createPentipede();hideOverlay();
+ syncHud();audioReady();sfx.wave();
+}
+function nextWave(){
+ wave++;living.reset(wave);seedGrass();
+ bonus=4500+wave*75;multiplier=1;
+ spawnTimer=wave<5?rnd(6,9):Math.max(2.6,6.8-wave*.13);
+ player.inv=1.7;critters=[];pickups=[];
+ for(let i=0;i<Math.min(18,5+wave);i++)addMushroom(rnd(30,W-30),rnd(85,H-120),chance(.09)?"magic":"normal",2);
+ createPentipede();mode="playing";showFloating("WAVE "+wave);sfx.wave();
+}
 function waveComplete(){if(mode!=="playing")return;mode="between";waveTimer=2.3;let awarded=Math.floor(bonus*multiplier);score+=awarded;saveBest();showFloating("BONUS +"+awarded.toLocaleString());sfx.wave();syncHud()}
 function loseLife(){if(player.inv>0||mode!=="playing")return;if(player.shield>0){player.shield=0;player.inv=1;burst(player.x,player.y,"#97e7ff",30,180);sfx.power();return}lives--;burst(player.x,player.y,"#52bdfa",65,280);sfx.hurt();flash=.32;player.inv=2.7;player.rapid=0;player.spread=0;player.x=360;player.y=701;player.tx=360;player.ty=701;syncHud();if(lives<=0){mode="over";saveBest();showOverlay("GAME OVER","You made it to <strong>wave "+wave+"</strong> with <strong>"+score.toLocaleString()+" points.</strong><br>Best: "+best.toLocaleString(),"PLAY AGAIN",resetGame)}}
 function addParticle(x,y,vx,vy,life,size,color,gravity){particles.push({x,y,vx,vy,life,max:life,size,color,gravity:gravity===undefined?65:gravity})}
 function burst(x,y,color,count,power){for(let i=0;i<count;i++){const angle=rnd(0,TAU),speed=rnd(power*.15,power);addParticle(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed,rnd(.2,.75),rnd(1.2,4.8),color,rnd(30,150))}}
 function addPickup(x,y,type){
+ const types=["rapid","spread","shield","multi","life","guided","ricochet","cleanse"];
  pickups.push({
-  x:clamp(x,26,W-26),y:clamp(y,34,H-44),vx:rnd(-105,105),vy:-rnd(105,175),
-  type:type||["rapid","spread","shield","multi","life"][Math.floor(rnd(0,5))],
+  x:clamp(x,26,W-26),y:clamp(y,34,H-44),
+  vx:rnd(-105,105),vy:-rnd(105,175),
+  type:type||types[Math.floor(rnd(0,types.length))],
   time:0,phase:rnd(0,TAU),spin:rnd(0,TAU),bounces:0
  });
 }
-function applyPickup(p){const t=p.type;if(t==="rapid")player.rapid=11;if(t==="spread")player.spread=12;if(t==="shield")player.shield=14;if(t==="multi")multiplier=Math.min(8,multiplier*2);if(t==="life")lives=Math.min(9,lives+1);score+=250;saveBest();showFloating(({rapid:"RAPID FIRE",spread:"TRIPLE PLASMA",shield:"CRYSTAL SHIELD",multi:"BONUS ×"+multiplier,life:"EXTRA LIFE"})[t],"#afe9ff");burst(p.x,p.y,"#ffdf70",22,130);sfx.power();syncHud()}
-function shoot(){const period=player.rapid>0?.072:.155;if(shotTimer>0)return;shotTimer=period;const n=player.spread>0?3:1;for(let i=0;i<n;i++){let a=(i-(n-1)/2)*.2;shots.push({x:player.x,y:player.y-19,vx:Math.sin(a)*340,vy:-750*Math.cos(a),life:1.2})}sfx.shoot()}
-function enemyHit(gi,si){const g=groups[gi],seg=g.segments[si],hit=artwork.pentipedePosition(g,si),left=g.segments.slice(0,si),right=g.segments.slice(si+1);groups.splice(gi,1);if(left.length)newGroup(left,g.dir,g.acc);if(right.length)newGroup(right,-g.dir,g.acc);addMushroom(seg.x,seg.y,chance(.12)?"magic":"normal",2);burst(hit.x,hit.y,"#baec83",26,185);burst(hit.x,hit.y,"#80594b",10,120);score+=100*multiplier;if(chance(.07))addPickup(hit.x,hit.y);sfx.splat();saveBest();if(groups.length===0)waveComplete()}
-function hitMushroom(i){const m=mushrooms[i];m.hp--;burst(m.x,m.y-8,m.kind==="toxic"?"#ff8b6b":"#d3ad80",6,75);sfx.mushroom();if(m.hp<=0){if(m.kind==="magic")addPickup(m.x,m.y,"multi");if(chance(.025))addPickup(m.x,m.y);score+=10;burst(m.x,m.y,"#c5a76b",14,115);mushrooms.splice(i,1)}else if(chance(.14))addParticle(m.x,m.y,20,35,.6,3,"#e8c19b");saveBest()}
-function spawnCritter(){const types=["scobster","gecko","flea","ufo"];const type=types[Math.floor(rnd(0,types.length))],side=chance(.5)?-1:1;critters.push({type,x:side<0?-48:W+48,y:type==="flea"?-30:rnd(190,H-260),dir:side<0?1:-1,phase:rnd(0,TAU),age:0,hp:type==="scobster"?3:2,drop:0})}
+function applyPickup(p){
+ const t=p.type;
+ if(t==="rapid")player.rapid=11;
+ if(t==="spread")player.spread=12;
+ if(t==="shield")player.shield=14;
+ if(t==="guided")player.guided=11;
+ if(t==="ricochet")player.ricochet=12;
+ if(t==="multi")multiplier=Math.min(8,multiplier*2);
+ if(t==="life")lives=Math.min(8,lives+1);
+ if(t==="cleanse"||t==="guided"||t==="ricochet")living.pickup(t,p.x,p.y);
+ score+=250*(player.frenzy>0?10:1);
+ saveBest();
+ const labels={rapid:"MACHINE GUN",spread:"TRIPLE PLASMA",shield:"CRYSTAL SHIELD",
+  guided:"GUIDED SHOTS",ricochet:"REFLECTOR SHOTS",cleanse:"PATCH CLEANUP",
+  multi:"BONUS ×"+multiplier,life:"EXTRA LIFE"};
+ showFloating(labels[t]||"BONUS!", "#ffeda4");
+ burst(p.x,p.y,"#ffdf70",24,140);sfx.power();syncHud();
+}
+function shoot(){
+ const period=player.rapid>0?.072:.155;
+ if(shotTimer>0)return;shotTimer=period;
+ const n=player.spread>0?3:1;
+ for(let i=0;i<n;i++){
+  const a=(i-(n-1)/2)*.2;
+  shots.push({x:player.x,y:player.y-19,vx:Math.sin(a)*340,
+   vy:-750*Math.cos(a),life:1.65,bounces:0,reflectWait:0,
+   ricochet:player.ricochet>0,guided:player.guided>0});
+ }
+ sfx.shoot();
+}
+function enemyHit(gi,si){
+ const g=groups[gi],seg=g.segments[si],hit=artwork.pentipedePosition(g,si);
+ const left=g.segments.slice(0,si),right=g.segments.slice(si+1);
+ groups.splice(gi,1);
+ if(left.length)newGroup(left,g.dir,g.acc);
+ if(right.length)newGroup(right,-g.dir,g.acc);
+ addMushroom(seg.x,seg.y,chance(.08)?"magic":"normal",2);
+ burst(hit.x,hit.y,"#baec83",26,185);burst(hit.x,hit.y,"#80594b",10,120);
+ score+=(si===0?100:25)*multiplier*(player.frenzy>0?10:1);
+ living.ring(hit.x,hit.y,"#daec76",10,.45);
+ if(chance(.095))addPickup(hit.x,hit.y);
+ sfx.splat();saveBest();if(groups.length===0)waveComplete();
+}
+function hitMushroom(i){
+ const m=mushrooms[i];m.hp--;
+ burst(m.x,m.y-8,m.kind==="toxic"?"#ff8b6b":"#d3ad80",6,75);
+ sfx.mushroom();
+ if(m.hp<=0){
+  if(m.kind==="magic"){living.specialMushroom(m);addPickup(m.x,m.y,"multi")}
+  else if(chance(.028))addPickup(m.x,m.y);
+  score+=(m.kind==="toxic"?5:1)*multiplier*(player.frenzy>0?10:1);
+  living.mushroomDislodged(m);
+  burst(m.x,m.y,"#c5a76b",12,110);
+  mushrooms.splice(i,1);
+ }else if(chance(.14))addParticle(m.x,m.y,20,35,.6,3,"#e8c19b");
+ saveBest();
+}
+function spawnCritter(){
+ const types=["scobster","gecko","flea","ufo"];
+ const type=types[Math.floor(rnd(0,types.length))],side=chance(.5)?-1:1;
+ critters.push({type,x:side<0?-48:W+48,
+ y:type==="flea"?-30:rnd(190,H-260),dir:side<0?1:-1,
+ phase:rnd(0,TAU),age:0,hp:type==="scobster"?3:2,drop:0});
+ if(type==="scobster")sfx.warning();
+}
 function updateGroups(dt){
  for(const g of groups){
   g.acc+=dt*g.speed;
@@ -207,27 +309,33 @@ function updateGroups(dt){
   while(g.acc>=1&&moves++<4){
    g.acc--;
    const head=g.segments[0],ahead=head.x+g.dir*STEP;
-   const blocked=ahead<22||ahead>W-22||mushrooms.some(m=>Math.abs(m.x-ahead)<22&&Math.abs(m.y-head.y)<20);
+   const poison=mushrooms.find(m=>Math.abs(m.x-ahead)<22&&Math.abs(m.y-head.y)<20);
+   const blocked=ahead<22||ahead>W-22||!!poison;
    let nx=ahead,ny=head.y;
-   if(blocked){
-    g.dir*=-1;
-    nx=head.x;
-    if(head.y>PLAY_TOP-35)g.lower=true;
-    if(g.lower){
-     if(head.y>=H-62)g.vdir=-1;
-     if(head.y<PLAY_TOP-20)g.vdir=1;
-     ny=clamp(head.y+g.vdir*STEP,PLAY_TOP-25,H-58);
-    }else ny=clamp(head.y+STEP,36,H-58);
+   if(g.dive&&head.y<PLAY_TOP+20){
+    nx=head.x;ny=clamp(head.y+STEP,36,H-58);
+   }else{
+    if(g.dive)g.dive=false;
+    if(blocked){
+     if(poison && poison.kind==="toxic")living.poisonTurn(g,poison);
+     g.dir*=-1;nx=head.x;
+     if(head.y>PLAY_TOP-35)g.lower=true;
+     if(g.dive){
+      ny=clamp(head.y+STEP,36,H-58);
+     }else if(g.lower){
+      if(head.y>=H-62)g.vdir=-1;
+      if(head.y<PLAY_TOP-20)g.vdir=1;
+      ny=clamp(head.y+g.vdir*STEP,PLAY_TOP-25,H-58);
+     }else ny=clamp(head.y+STEP,36,H-58);
+    }
    }
    if(head.y>PLAY_TOP-20)g.lower=true;
    if(g.lower&&ny>=H-62)g.vdir=-1;
    let previous={x:head.x,y:head.y};
    for(let i=0;i<g.segments.length;i++){
     const s=g.segments[i],next={x:s.x,y:s.y};
-    s.olderX=s.prevX;
-    s.olderY=s.prevY;
-    s.prevX=s.x;
-    s.prevY=s.y;
+    s.olderX=s.prevX;s.olderY=s.prevY;
+    s.prevX=s.x;s.prevY=s.y;
     if(i===0){s.x=nx;s.y=ny}
     else{s.x=previous.x;s.y=previous.y}
     previous=next;
@@ -236,8 +344,81 @@ function updateGroups(dt){
   }
  }
 }
-function updateCritters(dt){for(let i=critters.length-1;i>=0;i--){const c=critters[i];c.age+=dt;c.phase+=dt*4;c.drop+=dt;const speed=(c.type==="scobster"?130:c.type==="gecko"?175:c.type==="flea"?25:220)+wave*4;if(c.type==="flea"){c.x=W*.25+Math.sin(c.phase*1.1)*90;c.y+=speed*dt*1.5;if(c.drop>.37){addMushroom(c.x,c.y,"normal",2);c.drop=0}}else{c.x+=c.dir*speed*dt;c.y+=Math.sin(c.phase*1.2)*dt*(c.type==="scobster"?85:54);if(c.type==="gecko"&&c.drop>.66){addMushroom(c.x,c.y,"toxic",2);c.drop=0}if(c.type==="ufo"&&c.drop>.4){const mi=mushrooms.findIndex(m=>distance(m.x,m.y,c.x,c.y)<34);if(mi>=0){burst(mushrooms[mi].x,mushrooms[mi].y,"#f1a9df",9,75);mushrooms.splice(mi,1)}c.drop=0}if(c.type==="scobster"&&c.drop>.8){const mi=mushrooms.findIndex(m=>distance(m.x,m.y,c.x,c.y)<35);if(mi>=0)mushrooms.splice(mi,1);c.drop=0}}if(c.x<-90||c.x>W+90||c.y>H+80){critters.splice(i,1);continue}if(distance(c.x,c.y,player.x,player.y)<25)loseLife()}}
-function updateShots(dt){for(let i=shots.length-1;i>=0;i--){const s=shots[i];s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;if(s.y<-20||s.x<-20||s.x>W+20||s.life<=0){shots.splice(i,1);continue}let hit=false;for(let j=pickups.length-1;j>=0;j--){const p=pickups[j];if(distance(s.x,s.y,p.x,p.y)<16){pickups.splice(j,1);applyPickup(p);hit=true;break}}if(!hit){outer:for(let g=groups.length-1;g>=0;g--){for(let j=groups[g].segments.length-1;j>=0;j--){const hitPoint=artwork.pentipedePosition(groups[g],j);if(distance(s.x,s.y,hitPoint.x,hitPoint.y)<17){enemyHit(g,j);hit=true;break outer}}}}if(!hit){for(let j=critters.length-1;j>=0;j--){const c=critters[j];if(distance(s.x,s.y,c.x,c.y)<22){c.hp--;burst(c.x,c.y,"#f3b47f",13,145);sfx.hit();if(c.hp<=0){score+=400*multiplier;if(chance(.38))addPickup(c.x,c.y);critters.splice(j,1);saveBest()}hit=true;break}}}if(!hit){for(let j=mushrooms.length-1;j>=0;j--){const m=mushrooms[j];if(Math.abs(s.x-m.x)<14&&Math.abs(s.y-(m.y-7))<15){hitMushroom(j);hit=true;break}}}if(hit)shots.splice(i,1)}}
+function updateCritters(dt){
+ for(let i=critters.length-1;i>=0;i--){
+  const c=critters[i];
+  c.age+=dt;c.phase+=dt*4;c.drop+=dt;
+  const speed=(c.type==="scobster"?130:c.type==="gecko"?175:c.type==="flea"?35:220)+wave*4;
+  if(c.type==="flea"){
+   c.x=W*.25+Math.sin(c.phase*1.1)*90;
+   c.y+=speed*dt*1.5;
+  }else{
+   c.x+=c.dir*speed*dt;
+   c.y+=Math.sin(c.phase*1.2)*dt*(c.type==="scobster"?85:54);
+   if(c.type==="gecko"&&c.drop>.66){addMushroom(c.x,c.y,"toxic",2);c.drop=0}
+   if(c.type==="ufo"&&c.drop>.4){
+    const mi=mushrooms.findIndex(m=>distance(m.x,m.y,c.x,c.y)<34);
+    if(mi>=0){
+     living.ring(mushrooms[mi].x,mushrooms[mi].y,"#f1a9df",12,.44);
+     burst(mushrooms[mi].x,mushrooms[mi].y,"#f1a9df",9,75);
+     mushrooms.splice(mi,1);
+    }
+    c.drop=0;
+   }
+   if(c.type==="scobster"&&c.drop>.8){
+    const mi=mushrooms.findIndex(m=>distance(m.x,m.y,c.x,c.y)<35);
+    if(mi>=0){living.mushroomDislodged(mushrooms[mi]);mushrooms.splice(mi,1)}
+    c.drop=0;
+   }
+  }
+  living.critterBehavior(c,dt);
+  if(c.x<-100||c.x>W+100||c.y>H+80){critters.splice(i,1);continue}
+  if(distance(c.x,c.y,player.x,player.y)<25)loseLife();
+ }
+}
+function updateShots(dt){
+ for(let i=shots.length-1;i>=0;i--){
+  const s=shots[i];s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;
+  if(s.y<-25||s.y>H+25||s.x<-25||s.x>W+25||s.life<=0){shots.splice(i,1);continue}
+  let hit=living.fallingShot(s);
+  if(!hit)for(let j=pickups.length-1;j>=0;j--){
+   const p=pickups[j];
+   if(distance(s.x,s.y,p.x,p.y)<18){
+    pickups.splice(j,1);applyPickup(p);hit=true;break;
+   }
+  }
+  if(!hit){
+   outer:for(let g=groups.length-1;g>=0;g--){
+    for(let j=groups[g].segments.length-1;j>=0;j--){
+     const p=artwork.pentipedePosition(groups[g],j);
+     if(distance(s.x,s.y,p.x,p.y)<17){enemyHit(g,j);hit=true;break outer}
+    }
+   }
+  }
+  if(!hit)for(let j=critters.length-1;j>=0;j--){
+   const c=critters[j];
+   if(distance(s.x,s.y,c.x,c.y)<22){
+    c.hp--;burst(c.x,c.y,"#f3b47f",13,145);sfx.hit();
+    if(c.hp<=0){
+     score+=(c.type==="gecko"?1000:c.type==="scobster"?1500:400)*multiplier*(player.frenzy>0?10:1);
+     living.hitCritter(c);
+     if(chance(.48))addPickup(c.x,c.y);
+     critters.splice(j,1);saveBest();
+    }
+    hit=true;break;
+   }
+  }
+  if(!hit)for(let j=mushrooms.length-1;j>=0;j--){
+   const m=mushrooms[j];
+   if(Math.abs(s.x-m.x)<14&&Math.abs(s.y-(m.y-7))<15){
+    if(s.reflectWait>0)continue;
+    if(!living.reflectShot(s,m)){hitMushroom(j);hit=true}
+    break;
+   }
+  }
+  if(hit)shots.splice(i,1);
+ }
+}
 function updatePickups(dt){
  for(let i=pickups.length-1;i>=0;i--){
   const p=pickups[i];
@@ -261,13 +442,58 @@ function updatePickups(dt){
  }
 }
 function updateParticles(dt){for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=p.gravity*dt;p.vx*=1-dt*.8;if(p.life<=0)particles.splice(i,1)}if(particles.length>650)particles.splice(0,particles.length-650)}
-function update(dt){elapsed+=dt;shotTimer-=dt;player.inv=Math.max(0,player.inv-dt);player.rapid=Math.max(0,player.rapid-dt);player.spread=Math.max(0,player.spread-dt);player.shield=Math.max(0,player.shield-dt);bonus=Math.max(0,bonus-dt*(70+wave*5));spawnTimer-=dt;flash=Math.max(0,flash-dt);if(spawnTimer<0){spawnCritter();spawnTimer=rnd(4.5,7.5)/Math.min(2,1+wave*.035)}
-const mov=390*dt;if(held.has("ArrowLeft")||held.has("KeyA"))player.tx-=mov;if(held.has("ArrowRight")||held.has("KeyD"))player.tx+=mov;if(held.has("ArrowUp")||held.has("KeyW"))player.ty-=mov;if(held.has("ArrowDown")||held.has("KeyS"))player.ty+=mov;player.tx=clamp(player.tx,24,W-24);player.ty=clamp(player.ty,PLAY_TOP+8,H-31);const responsiveness=Math.min(1,dt*23);player.x+=(player.tx-player.x)*responsiveness;player.y+=(player.ty-player.y)*responsiveness;
-if(firing||held.has("Space"))shoot();updateGroups(dt);updateCritters(dt);updateShots(dt);updatePickups(dt);updateParticles(dt);
-for(const g of groups){for(let i=0;i<g.segments.length;i++){const p=artwork.pentipedePosition(g,i);if(distance(player.x,player.y,p.x,p.y)<19){loseLife();break}}}if(Math.floor(elapsed*8)!==Math.floor((elapsed-dt)*8))syncHud()}
+function update(dt){
+ elapsed+=dt;shotTimer-=dt;
+ player.inv=Math.max(0,player.inv-dt);
+ for(const k of ["rapid","spread","shield","guided","ricochet","frenzy"])
+  player[k]=Math.max(0,(player[k]||0)-dt);
+ bonus=Math.max(0,bonus-dt*(70+wave*5));
+ spawnTimer-=dt;flash=Math.max(0,flash-dt);
+ if(spawnTimer<0){
+  spawnCritter();
+  const initial=wave<=3?rnd(6,9):rnd(4.7,7.6);
+  spawnTimer=initial/Math.min(1.75,1+Math.max(0,wave-3)*.028);
+ }
+ const mov=390*dt;
+ if(held.has("ArrowLeft")||held.has("KeyA"))player.tx-=mov;
+ if(held.has("ArrowRight")||held.has("KeyD"))player.tx+=mov;
+ if(held.has("ArrowUp")||held.has("KeyW"))player.ty-=mov;
+ if(held.has("ArrowDown")||held.has("KeyS"))player.ty+=mov;
+ player.tx=clamp(player.tx,24,W-24);
+ player.ty=clamp(player.ty,PLAY_TOP+8,H-31);
+ const responsiveness=Math.min(1,dt*23);
+ player.x+=(player.tx-player.x)*responsiveness;
+ player.y+=(player.ty-player.y)*responsiveness;
+ if(firing||held.has("Space"))shoot();
+ updateGroups(dt);updateCritters(dt);
+ living.update(dt);
+ updateShots(dt);updatePickups(dt);updateParticles(dt);
+ for(const g of groups)for(let i=0;i<g.segments.length;i++){
+  const p=artwork.pentipedePosition(g,i);
+  if(distance(player.x,player.y,p.x,p.y)<19){loseLife();break}
+ }
+ if(Math.floor(elapsed*8)!==Math.floor((elapsed-dt)*8))syncHud();
+}
 function tickBetween(dt){waveTimer-=dt;updateParticles(dt);if(waveTimer<=0)nextWave()}
-function syncHud(){$("score").textContent=String(score).padStart(6,"0");$("bonus").textContent=String(Math.floor(bonus)).padStart(4,"0");$("wave").textContent=String(wave).padStart(2,"0");$("multi").textContent="×"+multiplier;$("lives").innerHTML='<span class="life-icons">'+('<span class="crystal-life"></span>'.repeat(Math.max(0,lives)))+'</span><span class="life-count"><span class="crystal-life"></span>×'+lives+'</span>';$("highScore").textContent="BEST "+String(best).padStart(6,"0");
-const powers=[["RAPID PLASMA",player.rapid,11],["TRIPLE PLASMA",player.spread,12],["SHIELD",player.shield,14]].filter(x=>x[1]>0);const active=powers.length?powers[0]:null;$("powerLabel").textContent=active?active[0]+"  "+Math.ceil(active[1])+"s":"NORMAL PLASMA";$("powerFill").style.width=active?(100*active[1]/active[2])+"%":"0%"}
+function syncHud(){
+ $("score").textContent=String(score).padStart(6,"0");
+ $("bonus").textContent=String(Math.floor(bonus)).padStart(4,"0");
+ $("wave").textContent=String(wave).padStart(2,"0");
+ $("multi").textContent="×"+multiplier;
+ $("lives").innerHTML='<span class="life-icons">'+('<span class="crystal-life"></span>'.repeat(Math.max(0,lives)))+'</span><span class="life-count"><span class="crystal-life"></span>×'+lives+'</span>';
+ $("highScore").textContent="BEST "+String(best).padStart(6,"0");
+ const powers=[
+  ["PSYCHEDELIC ×10",player.frenzy||0,8],
+  ["GUIDED PLASMA",player.guided||0,11],
+  ["RICOCHET SHOTS",player.ricochet||0,12],
+  ["RAPID PLASMA",player.rapid||0,11],
+  ["TRIPLE PLASMA",player.spread||0,12],
+  ["SHIELD",player.shield||0,14]
+ ].filter(p=>p[1]>0);
+ const active=powers.length?powers[0]:null;
+ $("powerLabel").textContent=active?active[0]+" "+Math.ceil(active[1])+"s":"NORMAL PLASMA";
+ $("powerFill").style.width=active?(100*active[1]/active[2])+"%":"0%";
+}
 function shadow(x,y,w,h,alpha){ctx.fillStyle="rgba(5,15,8,"+alpha+")";ctx.beginPath();ctx.ellipse(x+5,y+13,w,h,-.1,0,TAU);ctx.fill()}
 function drawMushrooms(){
  for(const m of mushrooms){
@@ -275,11 +501,16 @@ function drawMushrooms(){
   ctx.fillStyle="rgba(18,29,13,.54)";
   ctx.beginPath();ctx.ellipse(m.x+3,m.y+9,11.5,4,0,0,TAU);ctx.fill();
   ctx.save();ctx.translate(m.x,m.y);ctx.scale(pulse,pulse);
-  if(m.kind==="magic"){
-   ctx.shadowBlur=8;ctx.shadowColor="#ca77ed";
-  }
-  ctx.drawImage(artwork.mushroom(m.kind,m.variant),-16,-20,32,32);
+  if(m.kind==="magic"){ctx.shadowBlur=8;ctx.shadowColor="#ca77ed"}
+  if(m.kind==="reflector"){ctx.shadowBlur=9;ctx.shadowColor="#7adaff"}
+  ctx.drawImage(artwork.mushroom(m.kind==="reflector"?"normal":m.kind,m.variant),-16,-20,32,32);
   ctx.shadowBlur=0;
+  if(m.kind==="reflector"){
+   const sparkle=Math.sin(frameTime*6+m.shimmer)*.5+.5;
+   ctx.strokeStyle="rgba(155,241,255,"+(.4+sparkle*.55)+")";ctx.lineWidth=2;
+   ctx.beginPath();ctx.arc(0,-7,12,3.5,5.7);ctx.stroke();
+   ctx.fillStyle="#f1ffff";ctx.fillRect(-8,-15,2,2);
+  }
   if(m.hp===1){ctx.fillStyle="rgba(36,21,16,.46)";ctx.fillRect(-4,-6,2.5,2)}
   ctx.restore();
  }
@@ -287,11 +518,31 @@ function drawMushrooms(){
 function drawPentipedes(){artwork.drawPentipedes(ctx,groups,elapsed)}
 function drawCritters(){artwork.drawCritters(ctx,critters,frameTime)}
 function drawCrystal(){artwork.drawCrystal(ctx,player,frameTime)}
-function drawShots(){for(const s of shots){ctx.strokeStyle="#b8faff";ctx.lineWidth=3.5;ctx.shadowBlur=11;ctx.shadowColor="#58ccff";ctx.beginPath();ctx.moveTo(s.x,s.y+12);ctx.lineTo(s.x-s.vx*.018,s.y-12);ctx.stroke();ctx.shadowBlur=0}}
+function drawShots(){
+ for(const s of shots){
+  ctx.strokeStyle=s.guided?"#aaffb2":s.ricochet?"#e1b4ff":"#b8faff";
+  ctx.lineWidth=s.guided?4:3.5;ctx.shadowBlur=11;
+  ctx.shadowColor=s.guided?"#5bff8c":s.ricochet?"#c18cff":"#58ccff";
+  ctx.beginPath();ctx.moveTo(s.x,s.y+12);ctx.lineTo(s.x-s.vx*.018,s.y-s.vy*.018);ctx.stroke();
+  ctx.shadowBlur=0;
+ }
+}
 function drawPickups(){artwork.drawPickups(ctx,pickups,elapsed)}
 function drawParticles(){for(const p of particles){ctx.globalAlpha=Math.min(1,p.life/p.max);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life/p.max,0,TAU);ctx.fill()}ctx.globalAlpha=1}
 const vignette=ctx.createRadialGradient(W/2,H/2,155,W/2,H/2,520);vignette.addColorStop(0,"#00000000");vignette.addColorStop(.76,"#00000005");vignette.addColorStop(1,"#02140761");
-function render(){ctx.drawImage(grass,0,0);drawMushrooms();drawPickups();drawCritters();drawPentipedes();drawShots();drawCrystal();drawParticles();ctx.fillStyle=vignette;ctx.fillRect(0,0,W,H);if(flash>0){ctx.fillStyle="rgba(210,243,255,"+(flash*.8)+")";ctx.fillRect(0,0,W,H)}if(mode==="menu"){ctx.fillStyle="#102b1a16";ctx.fillRect(0,0,W,H)}if(floatingTime>0){$("floating").style.opacity=String(Math.min(1,floatingTime*1.7))}else{$("floating").style.opacity="0"}}
+function render(){
+ const offset=living.cameraShake();
+ ctx.save();ctx.translate(offset.x,offset.y);
+ ctx.drawImage(grass,0,0);
+ drawMushrooms();drawPickups();drawCritters();drawPentipedes();
+ drawShots();drawCrystal();drawParticles();
+ living.render(ctx,artwork);
+ ctx.fillStyle=vignette;ctx.fillRect(0,0,W,H);
+ if(flash>0){ctx.fillStyle="rgba(210,243,255,"+(flash*.8)+")";ctx.fillRect(0,0,W,H)}
+ if(mode==="menu"){ctx.fillStyle="#102b1a16";ctx.fillRect(0,0,W,H)}
+ ctx.restore();
+ $("floating").style.opacity=floatingTime>0?String(Math.min(1,floatingTime*1.7)):"0";
+}
 let lastTime=0;
 function loop(timestamp){const dt=Math.min(.045,(timestamp-lastTime)/1000||.016);lastTime=timestamp;frameTime+=dt;floatingTime=Math.max(0,floatingTime-dt);if(mode==="playing")update(dt);else if(mode==="between")tickBetween(dt);else updateParticles(dt);render();requestAnimationFrame(loop)}
 function pointerPos(ev){const rect=canvas.getBoundingClientRect(),x=(ev.clientX-rect.left)*W/rect.width,y=(ev.clientY-rect.top)*H/rect.height;return {x:clamp(x,23,W-23),y:clamp(y,PLAY_TOP+8,H-32)}}
@@ -309,7 +560,7 @@ function togglePause(){if(mode==="playing"){mode="paused";$("pauseBtn").textCont
 $("pauseBtn").addEventListener("click",togglePause);
 $("soundBtn").addEventListener("click",()=>{mute=!mute;$("soundBtn").textContent=mute?"♫ SOUND OFF":"♫ SOUND ON";if(!mute)audioReady()});
 $("primaryBtn").addEventListener("click",resetGame);
-seedMushrooms();createPentipede();syncHud();requestAnimationFrame(loop);
+living.reset(1);seedMushrooms();createPentipede();syncHud();requestAnimationFrame(loop);
 })();
 </script>
 </body>

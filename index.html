@@ -458,47 +458,72 @@ function updateCritters(dt){
   if(distance(c.x,c.y,player.x,player.y)<25)loseLife();
  }
 }
+// Swept collision prevents fast plasma from passing between frames on slow phones.
+// Returns the earliest point of contact along the projectile travel path.
+function sweepCircle(x0,y0,x1,y1,cx,cy,radius){
+ const dx=x1-x0,dy=y1-y0,length2=dx*dx+dy*dy;
+ const t=length2>0?clamp(((cx-x0)*dx+(cy-y0)*dy)/length2,0,1):0;
+ const px=x0+dx*t,py=y0+dy*t;
+ return (px-cx)**2+(py-cy)**2<=radius*radius?t:null;
+}
 function updateShots(dt){
  for(let i=shots.length-1;i>=0;i--){
-  const s=shots[i];s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;
-  if(s.y<-25||s.y>H+25||s.x<-25||s.x>W+25||s.life<=0){shots.splice(i,1);continue}
-  let hit=living.fallingShot(s);
-  if(!hit)for(let j=pickups.length-1;j>=0;j--){
-   const p=pickups[j];
-   if(distance(s.x,s.y,p.x,p.y)<18){
-    pickups.splice(j,1);applyPickup(p);hit=true;break;
-   }
+  const s=shots[i],x0=s.x,y0=s.y;
+  const x1=x0+s.vx*dt,y1=y0+s.vy*dt;
+  s.life-=dt;
+  if(s.life<=0){shots.splice(i,1);continue}
+  const hits=[];
+  for(let j=pickups.length-1;j>=0;j--){
+   const p=pickups[j],t=sweepCircle(x0,y0,x1,y1,p.x,p.y,16);
+   if(t!==null)hits.push({t,kind:"coin",index:j});
   }
-  if(!hit){
-   outer:for(let g=groups.length-1;g>=0;g--){
-    for(let j=groups[g].segments.length-1;j>=0;j--){
-     const p=artwork.pentipedePosition(groups[g],j);
-     if(distance(s.x,s.y,p.x,p.y)<17){enemyHit(g,j);hit=true;break outer}
-    }
+  for(let g=groups.length-1;g>=0;g--)
+   for(let j=groups[g].segments.length-1;j>=0;j--){
+    const p=artwork.pentipedePosition(groups[g],j);
+    const t=sweepCircle(x0,y0,x1,y1,p.x,p.y,16.2);
+    if(t!==null)hits.push({t,kind:"pentipede",index:j,group:g});
    }
+  for(let j=critters.length-1;j>=0;j--){
+   const c=critters[j],t=sweepCircle(x0,y0,x1,y1,c.x,c.y,19);
+   if(t!==null)hits.push({t,kind:"critter",index:j});
   }
-  if(!hit)for(let j=critters.length-1;j>=0;j--){
-   const c=critters[j];
-   if(distance(s.x,s.y,c.x,c.y)<22){
+  for(let j=mushrooms.length-1;j>=0;j--){
+   const m=mushrooms[j],t=sweepCircle(x0,y0,x1,y1,m.x,m.y-7,12.5);
+   if(t!==null)hits.push({t,kind:"mushroom",index:j});
+  }
+  hits.sort((a,b)=>a.t-b.t);
+  let consumed=false,reflected=false;
+  for(const h of hits){
+   if(h.kind==="mushroom" && s.reflectWait>0)continue;
+   s.x=x0+(x1-x0)*h.t;s.y=y0+(y1-y0)*h.t;
+   if(h.kind==="coin"){
+    const p=pickups[h.index];if(!p)continue;
+    pickups.splice(h.index,1);applyPickup(p);consumed=true;
+   }else if(h.kind==="pentipede"){
+    if(!groups[h.group]||!groups[h.group].segments[h.index])continue;
+    enemyHit(h.group,h.index);consumed=true;
+   }else if(h.kind==="critter"){
+    const c=critters[h.index];if(!c)continue;
     c.hp--;burst(c.x,c.y,"#f3b47f",13,145);sfx.hit();
     if(c.hp<=0){
      score+=(c.type==="gecko"?1000:c.type==="scobster"?1500:400)*multiplier*(player.frenzy>0?10:1);
      living.hitCritter(c);director.onKill();
      if(chance(.48))addPickup(c.x,c.y);
-     critters.splice(j,1);saveBest();
+     critters.splice(h.index,1);saveBest();
     }
-    hit=true;break;
+    consumed=true;
+   }else{
+    const m=mushrooms[h.index];if(!m)continue;
+    if(living.reflectShot(s,m)){reflected=true}
+    else{hitMushroom(h.index);consumed=true}
    }
+   break;
   }
-  if(!hit)for(let j=mushrooms.length-1;j>=0;j--){
-   const m=mushrooms[j];
-   if(Math.abs(s.x-m.x)<14&&Math.abs(s.y-(m.y-7))<15){
-    if(s.reflectWait>0)continue;
-    if(!living.reflectShot(s,m)){hitMushroom(j);hit=true}
-    break;
-   }
-  }
-  if(hit)shots.splice(i,1);
+  if(consumed){shots.splice(i,1);continue}
+  if(reflected)continue;
+  s.x=x1;s.y=y1;
+  if(living.fallingShot(s)){shots.splice(i,1);continue}
+  if(s.y<-25||s.y>H+25||s.x<-25||s.x>W+25)shots.splice(i,1);
  }
 }
 function updatePickups(dt){

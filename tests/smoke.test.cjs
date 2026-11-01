@@ -8,6 +8,8 @@ const root=path.join(__dirname,"..");
 const html=fs.readFileSync(path.join(root,"index.html"),"utf8");
 const art=fs.readFileSync(path.join(root,"art.js"),"utf8");
 const living=fs.readFileSync(path.join(root,"living-patch.js"),"utf8");
+const director=fs.readFileSync(path.join(root,"arcade-director.js"),"utf8");
+const scores=fs.readFileSync(path.join(root,"arcade-scores.js"),"utf8");
 assert.match(html,/living-patch\.js\?v=/);
 assert.match(html,/\.life-row\{[^}]*height:21px/);
 assert.match(html,/overscroll-behavior:none/);
@@ -37,9 +39,9 @@ const document={createElement(tag){return tag==="canvas"?canvas:getNode(tag);},
  addEventListener(){}};
 const window={addEventListener(){}};
 const localStorage={getItem(){return null;},setItem(){}};
-const sandbox=vm.createContext({window,document,localStorage,console,Math,
+const sandbox=vm.createContext({window,document,localStorage,console,Math,Date,
  requestAnimationFrame(){},performance:{now(){return 0;}}});
-for(const [filename,source] of [["art.js",art],["living-patch.js",living],["index-inline.js",instrumented]]){
+for(const [filename,source] of [["art.js",art],["living-patch.js",living],["arcade-director.js",director],["arcade-scores.js",scores],["index-inline.js",instrumented]]){
  vm.runInContext(source,sandbox,{filename,timeout:15000});
 }
 const t=window.__test;

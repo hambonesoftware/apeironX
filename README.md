@@ -21,6 +21,17 @@ If the link gives a 404, open [Settings → Pages](https://github.com/hambonesof
 
 Audio starts after pressing **Enter the Patch** (browser autoplay policy). **Sound On/Off** in the top bar.
 
+## Arcade Perfection v0.5
+
+This release focuses on how the game plays, rather than another sprite replacement.
+
+- **Wave director:** `arcade-director.js` orchestrates per-wave encounter budgets, wave-specific enemy combinations, simultaneous-enemy caps, danger-aware delays, and recovery time after a lost life. The first two waves introduce enemies gently; later waves increase variety and pressure without requiring endless enemy spam.
+- **Precision plasma:** projectile collisions use swept segment-to-circle checks between frames instead of single-point checks, reducing missed targets when an iPhone renders at a lower frame rate. The first object along the bullet path wins.
+- **Arcade sound mix:** synthesized effects have small pitch variations, a dynamics limiter, and shared noise-buffer synthesis to avoid needless memory allocations during frantic shooting.
+- **Local top ten:** `arcade-scores.js` stores up to ten entries on this device, with validated three-character initials and an in-game Top 10 button. Scores are not uploaded.
+- **Mobile arcade mode:** fixed-height scoreboard and toolbar, stable three-button controls, safe viewport rules, and standalone home-screen metadata. Web pages cannot override all system-level gestures; full native iOS testing is still needed.
+- **Balance regression tests:** `tests/director-balance.test.cjs` simulates 3,000 deterministic scripted encounter scenarios and asserts enemy and budget caps. `tests/bot-play.test.cjs` runs 36 seeded headless game-loop sessions through three AI strategies. `tests/scores.test.cjs` verifies local-score persistence, ranking, and initials sanitization. These are automated checks, not a substitute for real-player balancing or performance testing on physical phones.
+
 ## Living Mushroom Patch v0.4
 
 The mushroom field now changes in response to the player and its inhabitants.
@@ -38,7 +49,10 @@ The mushroom field now changes in response to the player and its inhabitants.
 - `index.html` — game simulation, rendering, sound synthesis, keyboard/touch controls and responsive layout.
 - `art.js` — separately cached, independently drawn sprite sheets, terrain and animated power-up coin artwork.
 - `living-patch.js` — environmental interactions, falling-mushroom physics, homing guidance, reflected plasma, extra attacker spawning and visual effects.
+- `arcade-director.js` — seeded and budgeted wave pacing with recovery periods and threat caps.
+- `arcade-scores.js` — local top-ten score table with initials validation.
 - `tests/smoke.test.cjs` — dependency-free Node regression tests of key mechanics, mobile HUD safeguards, and 1,200 simulated frames.
+- `tests/director-balance.test.cjs`, `tests/bot-play.test.cjs`, `tests/scores.test.cjs` — seeded balancing, headless gameplay and persistent leaderboard tests.
 - `.github/workflows/arcade-tests.yml` — automatically runs the regression tests on gameplay updates.
 
 The original published Apple/Mac game is a reference for atmosphere, not a source of copied assets. This browser version includes some newly designed bonuses and effects, so it is **not an exact or licensed recreation**. Matching the exact original sound effects, animation timing, and wave balancing will require further side-by-side testing against original gameplay footage. Native iPhone touch and performance testing is still advisable.

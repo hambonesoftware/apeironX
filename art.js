@@ -372,7 +372,10 @@
       spread: ["#f8b6ff", "#b95cce", "#51256f", "#ffdcff", "3"],
       shield: ["#c0faff", "#5ebddf", "#155a91", "#edffff", "S"],
       multi:  ["#fff6b8", "#f2bb35", "#935111", "#ffffff", "×2"],
-      life:   ["#b9ffc3", "#4ac47a", "#16634c", "#e2ffe6", "+"]
+      life:   ["#b9ffc3", "#4ac47a", "#16634c", "#e2ffe6", "+"],
+      guided: ["#b3ff9d", "#4dc97b", "#196149", "#f4ffbb", "G"],
+      ricochet: ["#d7c2ff", "#946bd7", "#46357f", "#f8eaff", "↗"],
+      cleanse: ["#f4f7c6", "#87ba6a", "#38663a", "#ffffff", "C"]
     };
     const [bright, mid, dark, glint, glyph] = schemes[type] || schemes.multi;
     return sprite(96, 96, g => {

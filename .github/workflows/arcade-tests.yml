@@ -34,3 +34,4 @@ jobs:
           node tests/smoke.test.cjs
           node tests/director-balance.test.cjs
           node tests/scores.test.cjs
+          node tests/bot-play.test.cjs

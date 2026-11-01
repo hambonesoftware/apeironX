@@ -167,6 +167,7 @@ let scoreSubmitted=false,runTime=0;
 let mushrooms=[],groups=[],shots=[],particles=[],pickups=[],critters=[];
 let firing=false,held=new Set(),spawnTimer=5,shotTimer=0,waveTimer=0,elapsed=0,flash=0,frameTime=0,audio=null,mute=false,floatingTime=0;
 let pointerIsTouch=false;
+let masterAudio=null,noiseBuffer=null,activeVoices=0;
 function rnd(a,b){return a+Math.random()*(b-a)}function chance(p){return Math.random()<p}function clamp(v,a,b){return Math.max(a,Math.min(b,v))}function distance(a,b,c,d){return Math.hypot(a-c,b-d)}
 function makeOff(w,h){const c=document.createElement("canvas");c.width=w;c.height=h;return [c,c.getContext("2d")]}
 function saveBest(){if(score>best){best=score;try{localStorage.setItem("apeiron-tribute-best",String(best))}catch(e){}}}
@@ -208,18 +209,68 @@ function showLeaderboard(source){
  pre.className="arcade-scoreboard";pre.textContent=leaderboard.format();
  $("dialog").appendChild(pre);
 }
-function audioReady(){if(mute)return;try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==="suspended")audio.resume()}catch(e){audio=null}}
-function tone(f1,f2,duration,waveform,volume,when){if(mute||!audio)return;try{const t=audio.currentTime+(when||0),o=audio.createOscillator(),g=audio.createGain();o.type=waveform||"sine";o.frequency.setValueAtTime(Math.max(30,f1),t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f2),t+duration);g.gain.setValueAtTime(.0005,t);g.gain.exponentialRampToValueAtTime(Math.max(.001,volume||.05),t+.009);g.gain.exponentialRampToValueAtTime(.0005,t+duration);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+duration+.02)}catch(e){}}
-function noise(duration,volume,when){if(mute||!audio)return;try{const start=audio.currentTime+(when||0),size=Math.floor(audio.sampleRate*duration),buffer=audio.createBuffer(1,size,audio.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<size;i++)data[i]=(Math.random()*2-1)*(1-i/size);const src=audio.createBufferSource(),filter=audio.createBiquadFilter(),g=audio.createGain();src.buffer=buffer;filter.type="highpass";filter.frequency.value=650;g.gain.setValueAtTime(volume,start);g.gain.exponentialRampToValueAtTime(.0005,start+duration);src.connect(filter);filter.connect(g);g.connect(audio.destination);src.start(start)}catch(e){}}
+function audioReady(){
+ if(mute)return;
+ try{
+  if(!audio){
+   const Context=window.AudioContext||window.webkitAudioContext;
+   if(!Context)return;
+   audio=new Context();
+   if(audio.createDynamicsCompressor){
+    masterAudio=audio.createDynamicsCompressor();
+    masterAudio.threshold.value=-22;
+    masterAudio.knee.value=17;
+    masterAudio.ratio.value=8;
+    masterAudio.attack.value=.005;
+    masterAudio.release.value=.18;
+    masterAudio.connect(audio.destination);
+   }else masterAudio=audio.destination;
+   const len=Math.floor(audio.sampleRate*.85);
+   noiseBuffer=audio.createBuffer(1,len,audio.sampleRate);
+   const samples=noiseBuffer.getChannelData(0);
+   for(let i=0;i<len;i++)samples[i]=Math.random()*2-1;
+  }
+  if(audio.state==="suspended")audio.resume();
+ }catch(e){audio=null;masterAudio=null;noiseBuffer=null}
+}
+function tone(f1,f2,duration,waveform,volume,when){
+ if(mute||!audio||activeVoices>=28)return;
+ try{
+  const t=audio.currentTime+(when||0);
+  const o=audio.createOscillator(),g=audio.createGain();
+  o.type=waveform||"sine";
+  o.frequency.setValueAtTime(Math.max(30,f1),t);
+  o.frequency.exponentialRampToValueAtTime(Math.max(30,f2),t+duration);
+  g.gain.setValueAtTime(.0005,t);
+  g.gain.exponentialRampToValueAtTime(Math.max(.001,volume||.05),t+.009);
+  g.gain.exponentialRampToValueAtTime(.0005,t+duration);
+  o.connect(g);g.connect(masterAudio||audio.destination);
+  activeVoices++;o.onended=()=>{activeVoices=Math.max(0,activeVoices-1)};
+  o.start(t);o.stop(t+duration+.02);
+ }catch(e){activeVoices=Math.max(0,activeVoices-1)}
+}
+function noise(duration,volume,when){
+ if(mute||!audio||!noiseBuffer)return;
+ try{
+  const start=audio.currentTime+(when||0);
+  const src=audio.createBufferSource(),filter=audio.createBiquadFilter(),g=audio.createGain();
+  src.buffer=noiseBuffer;filter.type="highpass";filter.frequency.value=650;
+  g.gain.setValueAtTime(volume,start);
+  g.gain.exponentialRampToValueAtTime(.0005,start+duration);
+  src.connect(filter);filter.connect(g);g.connect(masterAudio||audio.destination);
+  const offset=Math.random()*Math.max(0,.85-duration-.01);
+  src.start(start,offset);src.stop(start+duration);
+ }catch(e){}
+}
 const sfx={
- shoot(){tone(800,350,.085,"triangle",.048);tone(160,90,.065,"sine",.025)},
+ shoot(){const n=rnd(-45,45);tone(800+n,325+n*.3,.075,"triangle",.04);tone(180,95,.056,"sine",.022)},
  mushroom(){tone(220,95,.09,"triangle",.07);noise(.055,.02)},
- hit(){tone(570,135,.19,"sawtooth",.045);noise(.09,.055)},
- splat(){tone(310,72,.26,"square",.05);noise(.13,.09)},
+ hit(){tone(560+rnd(-70,70),125,.16,"sawtooth",.046);noise(.08,.048)},
+ splat(){tone(320+rnd(-48,48),85,.22,"triangle",.075);noise(.12,.065)},
  coin(){tone(520,790,.09,"sine",.07);tone(760,1160,.18,"sine",.07,.09)},
  power(){[440,554,660,880].forEach((f,i)=>tone(f,f*1.05,.18,"triangle",.075,i*.075))},
  hurt(){tone(690,90,.55,"sawtooth",.09);noise(.32,.09)},
- wave(){[392,523,659,784].forEach((f,i)=>tone(f,f*1.01,.25,"triangle",.08,i*.11))},
+ wave(){[392,523,659,784].forEach((f,i)=>tone(f,f*1.01,.22,"triangle",.062,i*.11))},
  bonus(){tone(780,650,.19,"square",.045)},
  tumble(){tone(240,90,.18,"triangle",.035);noise(.07,.022)},
  falling(){tone(820,190,.23,"triangle",.085);tone(1300,460,.18,"sine",.065,.05)},

@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#131a10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="description" content="An unofficial love letter to the classic Macintosh mushroom-patch arcade game.">
 <title>Apeiron X • Unofficial Browser Tribute</title>
 <style>
@@ -76,13 +79,44 @@ html,body{overscroll-behavior:none}
   .sidebar .stat{padding:5px}
   .hud-bottom{display:none}
 }
+
+/* v0.5 compact toolbar and non-expanding mobile scoreboard */
+#scoresBtn{border-color:#9ab171;color:#e9efbf}
+.arcade-scoreboard{width:100%;max-width:320px;margin:10px auto;
+ color:#d5eeba;text-align:left;white-space:pre;overflow:hidden;
+ font:700 clamp(10px,2.7vw,15px)/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}
+.arcade-initials{display:flex;align-items:center;justify-content:center;
+ flex-wrap:wrap;gap:8px;margin:14px auto 4px}
+.arcade-initials label{font-size:11px;letter-spacing:1.1px;color:#e6d18e}
+.arcade-initials input{font-size:22px;font-weight:800;letter-spacing:5px;
+ width:90px;height:44px;min-width:0;text-transform:uppercase;
+ text-align:center;border:1px solid #bfc18e;border-radius:6px;
+ background:#0f2119;color:#e9f7d3}
+.arcade-initials button{margin-top:0;padding:11px}
+@media(max-width:720px){
+ .site-header{height:42px;min-height:42px;padding:4px 8px!important}
+ .site-header .eyebrow{display:none}
+ .header-actions{width:100%;justify-content:space-between;gap:5px}
+ .header-actions button{flex:1;min-width:0;white-space:nowrap;padding:7px 4px!important;font-size:10px}
+ .shell{min-height:0}
+ .sidebar{height:68px;min-height:68px;max-height:68px;
+ grid-template-rows:minmax(0,1fr)!important}
+ .sidebar .stat,.sidebar .two-stats{min-height:0;overflow:hidden}
+ .stat-value{overflow:hidden}
+ .dialog{max-height:min(85dvh,520px);overflow-y:auto}
+ #floating{font-size:clamp(15px,4vw,24px)}
+}
+@media (hover:none) and (pointer:coarse) and (orientation:landscape) and (max-height:600px){
+ .sidebar{height:auto;max-height:none;min-height:0;overflow:hidden}
+ .site-header{height:35px;min-height:35px}
+}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto;transition:none!important}}
 </style>
 </head>
 <body>
 <header class="site-header">
   <div class="eyebrow"><b>MAC ARCADE REIMAGINED</b> &nbsp;·&nbsp; AN UNOFFICIAL FAN TRIBUTE</div>
-  <div class="header-actions"><button id="pauseBtn" type="button" aria-label="Pause or resume game">Ⅱ PAUSE</button><button id="soundBtn" type="button" aria-label="Toggle game sound">♫ SOUND ON</button></div>
+  <div class="header-actions"><button id="scoresBtn" type="button" aria-label="Show top ten local scores">★ TOP 10</button><button id="pauseBtn" type="button" aria-label="Pause or resume game">Ⅱ PAUSE</button><button id="soundBtn" type="button" aria-label="Toggle game sound">♫ SOUND ON</button></div>
 </header>
 <main class="shell">
   <section class="field-wrap" aria-label="Arcade game field">
@@ -116,6 +150,8 @@ html,body{overscroll-behavior:none}
 <footer class="hud-bottom"><span class="tagline">A lush, shadowed, fast-paced homage to a classic Macintosh favorite.</span><span id="touchHint">On mobile: drag your finger and the crystal auto-fires.</span><span id="highScore">BEST 000000</span></footer>
 <script src="art.js?v=20261101-living"></script>
 <script src="living-patch.js?v=20261101-v04"></script>
+<script src="arcade-director.js?v=20261101-v05"></script>
+<script src="arcade-scores.js?v=20261101-v05"></script>
 <script>
 "use strict";
 (function(){
@@ -126,6 +162,8 @@ const artwork=window.ApeironArt;
 let mode="menu",wave=1,score=0,lives=3,bonus=4500,multiplier=1;
 let best=0;try{best=Number(localStorage.getItem("apeiron-tribute-best"))||0}catch(e){}
 let player={x:360,y:701,tx:360,ty:701,inv:0,rapid:0,spread:0,shield:0};
+const leaderboard=window.ApeironScores.create();
+let scoreSubmitted=false,runTime=0;
 let mushrooms=[],groups=[],shots=[],particles=[],pickups=[],critters=[];
 let firing=false,held=new Set(),spawnTimer=5,shotTimer=0,waveTimer=0,elapsed=0,flash=0,frameTime=0,audio=null,mute=false,floatingTime=0;
 let pointerIsTouch=false;
@@ -140,6 +178,36 @@ function showFloating(message,color){
 }
 function showOverlay(title,body,button,action){$("overlay").classList.remove("hidden");$("dialog").innerHTML='<div class="small">THROUGH THE LOOKING GLASS</div><h2>'+title+'</h2><p>'+body+'</p><button type="button" id="primaryBtn">'+button+'</button>';$("primaryBtn").addEventListener("click",action)}
 function hideOverlay(){$("overlay").classList.add("hidden")}
+function showGameOver(){
+ mode="over";saveBest();
+ const qualifies=leaderboard.qualifies(score)&&!scoreSubmitted;
+ showOverlay("GAME OVER","Wave <strong>"+wave+"</strong> · <strong>"+
+ score.toLocaleString()+" points</strong>. Personal best: "+best.toLocaleString(),
+ "PLAY AGAIN",resetGame);
+ if(qualifies){
+  $("dialog").innerHTML+='<div class="arcade-initials"><label for="scoreInitials">NEW HIGH SCORE · INITIALS</label><input id="scoreInitials" maxlength="3" inputmode="text" autocomplete="off" value="ACE" aria-label="Three initials"><button type="button" id="saveScoreBtn">SAVE SCORE</button></div>';
+  $("saveScoreBtn").addEventListener("click",()=>{
+   leaderboard.record($("scoreInitials").value,score,wave);
+   scoreSubmitted=true;showLeaderboard("over");
+  });
+ }
+}
+function showLeaderboard(source){
+ const previous=source||mode;mode="scores";
+ showOverlay("TOP TEN","Best arcade scores, stored privately on this device.",
+ previous==="playing"||previous==="paused"?"RESUME":"BACK",()=>{
+  mode=previous;
+  if(previous==="playing"){hideOverlay();audioReady()}
+  else if(previous==="paused")showOverlay("PAUSED","The mushroom patch will wait for you.","RESUME GAME",()=>{
+   audioReady();mode="playing";$("pauseBtn").textContent="Ⅱ PAUSE";hideOverlay();
+  });
+  else if(previous==="over")showGameOver();
+  else showOverlay("THE PATCH","Blast the Pentipede and collect bonuses.","ENTER THE PATCH",resetGame);
+ });
+ const pre=document.createElement("pre");
+ pre.className="arcade-scoreboard";pre.textContent=leaderboard.format();
+ $("dialog").appendChild(pre);
+}
 function audioReady(){if(mute)return;try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==="suspended")audio.resume()}catch(e){audio=null}}
 function tone(f1,f2,duration,waveform,volume,when){if(mute||!audio)return;try{const t=audio.currentTime+(when||0),o=audio.createOscillator(),g=audio.createGain();o.type=waveform||"sine";o.frequency.setValueAtTime(Math.max(30,f1),t);o.frequency.exponentialRampToValueAtTime(Math.max(30,f2),t+duration);g.gain.setValueAtTime(.0005,t);g.gain.exponentialRampToValueAtTime(Math.max(.001,volume||.05),t+.009);g.gain.exponentialRampToValueAtTime(.0005,t+duration);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+duration+.02)}catch(e){}}
 function noise(duration,volume,when){if(mute||!audio)return;try{const start=audio.currentTime+(when||0),size=Math.floor(audio.sampleRate*duration),buffer=audio.createBuffer(1,size,audio.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<size;i++)data[i]=(Math.random()*2-1)*(1-i/size);const src=audio.createBufferSource(),filter=audio.createBiquadFilter(),g=audio.createGain();src.buffer=buffer;filter.type="highpass";filter.frequency.value=650;g.gain.setValueAtTime(volume,start);g.gain.exponentialRampToValueAtTime(.0005,start+duration);src.connect(filter);filter.connect(g);g.connect(audio.destination);src.start(start)}catch(e){}}
@@ -174,6 +242,7 @@ const living=window.LivingPatch.create({
  spawnSegment:(x,y,dir)=>newGroup([{x,y,prevX:x,prevY:y,olderX:x-dir*STEP,olderY:y}],dir),
  position:(group,index)=>artwork.pentipedePosition(group,index)
 });
+const director=window.ArcadeDirector.create();
 const [grass,gx]=makeOff(W,H);
 function seedGrass(){artwork.renderGround(gx,W,H,wave)}
 seedGrass();
@@ -211,13 +280,14 @@ function newGroup(segments,dir,phase=0){
 function createPentipede(){groups=[];const length=Math.min(10+Math.floor(wave*.6),18);const arr=[];for(let i=0;i<length;i++)arr.push({x:W-120-i*STEP,y:82});newGroup(arr,1)}
 function resetGame(){
  mode="playing";score=0;wave=1;lives=3;multiplier=1;bonus=4500;elapsed=0;
- spawnTimer=6.2;flash=0;shotTimer=0;shots=[];particles=[];pickups=[];critters=[];
+ spawnTimer=6.2;flash=0;shotTimer=0;runTime=0;scoreSubmitted=false;shots=[];particles=[];pickups=[];critters=[];
+ director.start(1);
  player={x:360,y:701,tx:360,ty:701,inv:2,rapid:0,spread:0,shield:0,guided:0,ricochet:0,frenzy:0};
  living.reset(wave);seedGrass();seedMushrooms();createPentipede();hideOverlay();
  syncHud();audioReady();sfx.wave();
 }
 function nextWave(){
- wave++;living.reset(wave);seedGrass();
+ wave++;living.reset(wave);director.start(wave);seedGrass();
  bonus=4500+wave*75;multiplier=1;
  spawnTimer=wave<5?rnd(6,9):Math.max(2.6,6.8-wave*.13);
  player.inv=1.7;critters=[];pickups=[];
@@ -225,7 +295,17 @@ function nextWave(){
  createPentipede();mode="playing";showFloating("WAVE "+wave);sfx.wave();
 }
 function waveComplete(){if(mode!=="playing")return;mode="between";waveTimer=2.3;let awarded=Math.floor(bonus*multiplier);score+=awarded;saveBest();showFloating("BONUS +"+awarded.toLocaleString());sfx.wave();syncHud()}
-function loseLife(){if(player.inv>0||mode!=="playing")return;if(player.shield>0){player.shield=0;player.inv=1;burst(player.x,player.y,"#97e7ff",30,180);sfx.power();return}lives--;burst(player.x,player.y,"#52bdfa",65,280);sfx.hurt();flash=.32;player.inv=2.7;player.rapid=0;player.spread=0;player.x=360;player.y=701;player.tx=360;player.ty=701;syncHud();if(lives<=0){mode="over";saveBest();showOverlay("GAME OVER","You made it to <strong>wave "+wave+"</strong> with <strong>"+score.toLocaleString()+" points.</strong><br>Best: "+best.toLocaleString(),"PLAY AGAIN",resetGame)}}
+function loseLife(){
+ if(player.inv>0||mode!=="playing")return;
+ if(player.shield>0){
+  player.shield=0;player.inv=1.15;burst(player.x,player.y,"#97e7ff",30,180);sfx.power();return;
+ }
+ lives--;director.onDeath();
+ burst(player.x,player.y,"#52bdfa",65,280);sfx.hurt();flash=.27;
+ player.inv=3.15;player.rapid=0;player.spread=0;player.guided=0;
+ player.x=360;player.y=701;player.tx=360;player.ty=701;
+ syncHud();if(lives<=0)showGameOver();
+}
 function addParticle(x,y,vx,vy,life,size,color,gravity){particles.push({x,y,vx,vy,life,max:life,size,color,gravity:gravity===undefined?65:gravity})}
 function burst(x,y,color,count,power){for(let i=0;i<count;i++){const angle=rnd(0,TAU),speed=rnd(power*.15,power);addParticle(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed,rnd(.2,.75),rnd(1.2,4.8),color,rnd(30,150))}}
 function addPickup(x,y,type){
@@ -245,6 +325,7 @@ function applyPickup(p){
  if(t==="guided")player.guided=11;
  if(t==="ricochet")player.ricochet=12;
  if(t==="multi")multiplier=Math.min(8,multiplier*2);
+ director.onPower();
  if(t==="life")lives=Math.min(8,lives+1);
  if(t==="cleanse"||t==="guided"||t==="ricochet")living.pickup(t,p.x,p.y);
  score+=250*(player.frenzy>0?10:1);
@@ -277,6 +358,7 @@ function enemyHit(gi,si){
  burst(hit.x,hit.y,"#baec83",26,185);burst(hit.x,hit.y,"#80594b",10,120);
  score+=(si===0?100:25)*multiplier*(player.frenzy>0?10:1);
  living.ring(hit.x,hit.y,"#daec76",10,.45);
+ director.onKill();
  if(chance(.095))addPickup(hit.x,hit.y);
  sfx.splat();saveBest();if(groups.length===0)waveComplete();
 }
@@ -294,12 +376,12 @@ function hitMushroom(i){
  }else if(chance(.14))addParticle(m.x,m.y,20,35,.6,3,"#e8c19b");
  saveBest();
 }
-function spawnCritter(){
+function spawnCritter(forcedType){
  const types=["scobster","gecko","flea","ufo"];
- const type=types[Math.floor(rnd(0,types.length))],side=chance(.5)?-1:1;
- critters.push({type,x:side<0?-48:W+48,
- y:type==="flea"?-30:rnd(190,H-260),dir:side<0?1:-1,
- phase:rnd(0,TAU),age:0,hp:type==="scobster"?3:2,drop:0});
+ const type=forcedType||types[Math.floor(rnd(0,types.length))];
+ const side=chance(.5)?-1:1;
+ critters.push({type,x:side<0?-48:W+48,y:type==="flea"?-30:rnd(160,H-275),
+ dir:side<0?1:-1,phase:rnd(0,TAU),age:0,hp:type==="scobster"?3:2,drop:0});
  if(type==="scobster")sfx.warning();
 }
 function updateGroups(dt){
@@ -401,7 +483,7 @@ function updateShots(dt){
     c.hp--;burst(c.x,c.y,"#f3b47f",13,145);sfx.hit();
     if(c.hp<=0){
      score+=(c.type==="gecko"?1000:c.type==="scobster"?1500:400)*multiplier*(player.frenzy>0?10:1);
-     living.hitCritter(c);
+     living.hitCritter(c);director.onKill();
      if(chance(.48))addPickup(c.x,c.y);
      critters.splice(j,1);saveBest();
     }
@@ -448,12 +530,9 @@ function update(dt){
  for(const k of ["rapid","spread","shield","guided","ricochet","frenzy"])
   player[k]=Math.max(0,(player[k]||0)-dt);
  bonus=Math.max(0,bonus-dt*(70+wave*5));
- spawnTimer-=dt;flash=Math.max(0,flash-dt);
- if(spawnTimer<0){
-  spawnCritter();
-  const initial=wave<=3?rnd(6,9):rnd(4.7,7.6);
-  spawnTimer=initial/Math.min(1.75,1+Math.max(0,wave-3)*.028);
- }
+ flash=Math.max(0,flash-dt);runTime+=dt;
+ const encounter=director.tick(dt,{critters,groups,lives,PLAY_TOP});
+ if(encounter)spawnCritter(encounter.type);
  const mov=390*dt;
  if(held.has("ArrowLeft")||held.has("KeyA"))player.tx-=mov;
  if(held.has("ArrowRight")||held.has("KeyD"))player.tx+=mov;
@@ -549,7 +628,7 @@ function pointerPos(ev){const rect=canvas.getBoundingClientRect(),x=(ev.clientX-
 canvas.addEventListener("pointerdown",ev=>{if(mode!=="playing")return;ev.preventDefault();const p=pointerPos(ev);player.tx=p.x;player.ty=p.y;pointerIsTouch=ev.pointerType==="touch";firing=true;audioReady();try{canvas.setPointerCapture(ev.pointerId)}catch(e){}});
 canvas.addEventListener("pointermove",ev=>{if(mode!=="playing")return;if(ev.pointerType==="mouse"||firing){const p=pointerPos(ev);player.tx=p.x;player.ty=p.y;}});
 canvas.addEventListener("pointerup",()=>{firing=false;pointerIsTouch=false});canvas.addEventListener("pointercancel",()=>{firing=false;pointerIsTouch=false});window.addEventListener("pointerup",()=>{firing=false;pointerIsTouch=false});
-window.addEventListener("keydown",ev=>{if(["Space","ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(ev.code))ev.preventDefault();if(ev.code==="KeyP"||ev.code==="Escape"){if(!ev.repeat)togglePause();return}if(ev.code==="Enter"&&mode==="menu"){resetGame();return}if(ev.code==="Enter"&&mode==="over"){resetGame();return}held.add(ev.code);if(ev.code==="Space")audioReady()});
+window.addEventListener("keydown",ev=>{if(["Space","ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(ev.code))ev.preventDefault();if(ev.code==="KeyP"||ev.code==="Escape"){if(!ev.repeat)togglePause();return}if(ev.code==="Enter"&&mode==="menu"){resetGame();return}if(ev.code==="Enter"&&mode==="over"&&!document.getElementById("scoreInitials")){resetGame();return}held.add(ev.code);if(ev.code==="Space")audioReady()});
 window.addEventListener("keyup",ev=>held.delete(ev.code));// Browser chrome, notification shade, or focus changes must not pause a live round.
 window.addEventListener("blur",()=>{held.clear();firing=false});
 document.addEventListener("visibilitychange",()=>{held.clear();firing=false;lastTime=performance.now()});
@@ -558,6 +637,7 @@ document.addEventListener("touchmove",ev=>{if(ev.cancelable)ev.preventDefault()}
 canvas.addEventListener("contextmenu",ev=>ev.preventDefault());
 function togglePause(){if(mode==="playing"){mode="paused";$("pauseBtn").textContent="▶ RESUME";showOverlay("PAUSED","The mushroom patch will wait for you.","RESUME GAME",()=>{audioReady();mode="playing";$("pauseBtn").textContent="Ⅱ PAUSE";hideOverlay()})}else if(mode==="paused"){mode="playing";$("pauseBtn").textContent="Ⅱ PAUSE";hideOverlay()}}
 $("pauseBtn").addEventListener("click",togglePause);
+$("scoresBtn").addEventListener("click",()=>showLeaderboard());
 $("soundBtn").addEventListener("click",()=>{mute=!mute;$("soundBtn").textContent=mute?"♫ SOUND OFF":"♫ SOUND ON";if(!mute)audioReady()});
 $("primaryBtn").addEventListener("click",resetGame);
 living.reset(1);seedMushrooms();createPentipede();syncHud();requestAnimationFrame(loop);

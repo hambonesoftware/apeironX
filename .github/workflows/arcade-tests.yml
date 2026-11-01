@@ -33,3 +33,4 @@ jobs:
         run: |
           node tests/smoke.test.cjs
           node tests/director-balance.test.cjs
+          node tests/scores.test.cjs

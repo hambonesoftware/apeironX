@@ -132,7 +132,7 @@ assert.ok(coin.vy<0,"Shot yummy coin must bounce away");
 assert.equal(yummy.player.guided,0);
 t.resetGame();yummy=t.inspect();
 t.applyPickup({type:"multiplier",x:350,y:500});
-assert.equal(yummy.multiplier,2);
+assert.equal(t.inspect().multiplier,2);
 t.render();
 assert.equal(yummy.player.lock,false,"Lock should clear between new runs");
 

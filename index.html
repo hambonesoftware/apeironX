@@ -148,7 +148,8 @@ html,body{overscroll-behavior:none}
   </aside>
 </main>
 <footer class="hud-bottom"><span class="tagline">A lush, shadowed, fast-paced homage to a classic Macintosh favorite.</span><span id="touchHint">On mobile: drag your finger and the crystal auto-fires.</span><span id="highScore">BEST 000000</span></footer>
-<script src="art.js?v=20261101-living"></script>
+<script src="apeiron-bonuses.js?v=20261102-ambrosia"></script>
+ <script src="art.js?v=20261102-yummies"></script>
 <script src="living-patch.js?v=20261101-v04"></script>
 <script src="arcade-director.js?v=20261101-v05"></script>
 <script src="arcade-scores.js?v=20261101-v05"></script>
@@ -158,10 +159,10 @@ html,body{overscroll-behavior:none}
 const canvas=document.getElementById("game"),ctx=canvas.getContext("2d",{alpha:false});
 const W=720,H=760,STEP=30,PLAY_TOP=H-178,TAU=Math.PI*2;
 const $=id=>document.getElementById(id);
-const artwork=window.ApeironArt;
+const artwork=window.ApeironArt, yummies=window.ApeironBonuses;
 let mode="menu",wave=1,score=0,lives=3,bonus=4500,multiplier=1;
 let best=0;try{best=Number(localStorage.getItem("apeiron-tribute-best"))||0}catch(e){}
-let player={x:360,y:701,tx:360,ty:701,inv:0,rapid:0,spread:0,shield:0};
+let player={x:360,y:701,tx:360,ty:701,inv:0,rapid:0,spread:0,shield:0,guided:0,ricochet:0,ghost:0,lock:false,frenzy:0};
 const leaderboard=window.ApeironScores.create();
 let scoreSubmitted=false,runTime=0;
 let mushrooms=[],groups=[],shots=[],particles=[],pickups=[],critters=[];
@@ -333,7 +334,7 @@ function resetGame(){
  mode="playing";score=0;wave=1;lives=3;multiplier=1;bonus=4500;elapsed=0;
  spawnTimer=6.2;flash=0;shotTimer=0;runTime=0;scoreSubmitted=false;shots=[];particles=[];pickups=[];critters=[];
  director.start(1);
- player={x:360,y:701,tx:360,ty:701,inv:2,rapid:0,spread:0,shield:0,guided:0,ricochet:0,frenzy:0};
+ player={x:360,y:701,tx:360,ty:701,inv:2,rapid:0,spread:0,shield:0,guided:0,ricochet:0,ghost:0,lock:false,frenzy:0};
  living.reset(wave);seedGrass();seedMushrooms();createPentipede();hideOverlay();
  syncHud();audioReady();sfx.wave();
 }
@@ -345,46 +346,46 @@ function nextWave(){
  for(let i=0;i<Math.min(18,5+wave);i++)addMushroom(rnd(30,W-30),rnd(85,H-120),chance(.09)?"magic":"normal",2);
  createPentipede();mode="playing";showFloating("WAVE "+wave);sfx.wave();
 }
-function waveComplete(){if(mode!=="playing")return;mode="between";waveTimer=2.3;let awarded=Math.floor(bonus*multiplier);score+=awarded;saveBest();showFloating("BONUS +"+awarded.toLocaleString());sfx.wave();syncHud()}
+function waveComplete(){if(mode!=="playing")return;mode="between";waveTimer=2.3;let awarded=Math.floor(bonus*multiplier*(player.frenzy>0?10:1));score+=awarded;saveBest();showFloating("BONUS +"+awarded.toLocaleString());sfx.wave();syncHud()}
 function loseLife(){
  if(player.inv>0||mode!=="playing")return;
  if(player.shield>0){
-  player.shield=0;player.inv=1.15;burst(player.x,player.y,"#97e7ff",30,180);sfx.power();return;
+  player.inv=.55;burst(player.x,player.y,"#97e7ff",15,160);sfx.power();return;
  }
  lives--;director.onDeath();
  burst(player.x,player.y,"#52bdfa",65,280);sfx.hurt();flash=.27;
- player.inv=3.15;player.rapid=0;player.spread=0;player.guided=0;
+ player.inv=3.15;yummies.keepOnDeath(player);
  player.x=360;player.y=701;player.tx=360;player.ty=701;
  syncHud();if(lives<=0)showGameOver();
 }
 function addParticle(x,y,vx,vy,life,size,color,gravity){particles.push({x,y,vx,vy,life,max:life,size,color,gravity:gravity===undefined?65:gravity})}
 function burst(x,y,color,count,power){for(let i=0;i<count;i++){const angle=rnd(0,TAU),speed=rnd(power*.15,power);addParticle(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed,rnd(.2,.75),rnd(1.2,4.8),color,rnd(30,150))}}
 function addPickup(x,y,type){
- const types=["rapid","spread","shield","multi","life","guided","ricochet","cleanse"];
+ if(pickups.length>=12)return;
+ const chosen=type==="multi"?"multiplier":(type||yummies.select());
  pickups.push({
   x:clamp(x,26,W-26),y:clamp(y,34,H-44),
   vx:rnd(-105,105),vy:-rnd(105,175),
-  type:type||types[Math.floor(rnd(0,types.length))],
+  type:chosen,shotCooldown:0,
   time:0,phase:rnd(0,TAU),spin:rnd(0,TAU),bounces:0
  });
 }
 function applyPickup(p){
  const t=p.type;
- if(t==="rapid")player.rapid=11;
+ if(t==="rapid")player.rapid=Infinity;
  if(t==="spread")player.spread=12;
- if(t==="shield")player.shield=14;
- if(t==="guided")player.guided=11;
+ if(t==="shield")player.shield=Math.max(player.shield||0,12);
+ if(t==="guided")player.guided=Infinity;
+ if(t==="ghost")player.ghost=Infinity;
+ if(t==="lock")player.lock=true;
  if(t==="ricochet")player.ricochet=12;
- if(t==="multi")multiplier=Math.min(8,multiplier*2);
+ if(t==="multi"||t==="multiplier")multiplier=Math.min(8,multiplier*2);
  director.onPower();
  if(t==="life")lives=Math.min(8,lives+1);
  if(t==="cleanse"||t==="guided"||t==="ricochet")living.pickup(t,p.x,p.y);
  score+=250*(player.frenzy>0?10:1);
  saveBest();
- const labels={rapid:"MACHINE GUN",spread:"TRIPLE PLASMA",shield:"CRYSTAL SHIELD",
-  guided:"GUIDED SHOTS",ricochet:"REFLECTOR SHOTS",cleanse:"PATCH CLEANUP",
-  multi:"BONUS ×"+multiplier,life:"EXTRA LIFE"};
- showFloating(labels[t]||"BONUS!", "#ffeda4");
+ showFloating(t==="multiplier"||t==="multi"?"BONUS ×"+multiplier:yummies.LABELS[t]||"YUMMY!", "#ffeda4");
  burst(p.x,p.y,"#ffdf70",24,140);sfx.power();syncHud();
 }
 function shoot(){
@@ -410,7 +411,7 @@ function enemyHit(gi,si){
  score+=(si===0?100:25)*multiplier*(player.frenzy>0?10:1);
  living.ring(hit.x,hit.y,"#daec76",10,.45);
  director.onKill();
- if(chance(.095))addPickup(hit.x,hit.y);
+ if(chance(.14))addPickup(hit.x,hit.y,chance(.14)?"multiplier":undefined);
  sfx.splat();saveBest();if(groups.length===0)waveComplete();
 }
 function hitMushroom(i){
@@ -418,8 +419,8 @@ function hitMushroom(i){
  burst(m.x,m.y-8,m.kind==="toxic"?"#ff8b6b":"#d3ad80",6,75);
  sfx.mushroom();
  if(m.hp<=0){
-  if(m.kind==="magic"){living.specialMushroom(m);addPickup(m.x,m.y,"multi")}
-  else if(chance(.028))addPickup(m.x,m.y);
+  if(m.kind==="magic")living.specialMushroom(m);
+  else if(chance(.038))addPickup(m.x,m.y,chance(.12)?"multiplier":undefined);
   score+=(m.kind==="toxic"?5:1)*multiplier*(player.frenzy>0?10:1);
   living.mushroomDislodged(m);
   burst(m.x,m.y,"#c5a76b",12,110);
@@ -525,7 +526,7 @@ function updateShots(dt){
   if(s.life<=0){shots.splice(i,1);continue}
   const hits=[];
   for(let j=pickups.length-1;j>=0;j--){
-   const p=pickups[j],t=sweepCircle(x0,y0,x1,y1,p.x,p.y,16);
+   const p=pickups[j],t=p.shotCooldown>0?null:sweepCircle(x0,y0,x1,y1,p.x,p.y,16);
    if(t!==null)hits.push({t,kind:"coin",index:j});
   }
   for(let g=groups.length-1;g>=0;g--)
@@ -549,7 +550,12 @@ function updateShots(dt){
    s.x=x0+(x1-x0)*h.t;s.y=y0+(y1-y0)*h.t;
    if(h.kind==="coin"){
     const p=pickups[h.index];if(!p)continue;
-    pickups.splice(h.index,1);applyPickup(p);consumed=true;
+    if(p.type==="multiplier"||p.type==="multi"){
+     pickups.splice(h.index,1);applyPickup(p);
+    }else{
+     yummies.shotCoin(p,s);sfx.coin();living.ring(p.x,p.y,"#ffe18b",14,.34);
+    }
+    consumed=true;
    }else if(h.kind==="pentipede"){
     if(!groups[h.group]||!groups[h.group].segments[h.index])continue;
     enemyHit(h.group,h.index);consumed=true;
@@ -559,7 +565,7 @@ function updateShots(dt){
     if(c.hp<=0){
      score+=(c.type==="gecko"?1000:c.type==="scobster"?1500:400)*multiplier*(player.frenzy>0?10:1);
      living.hitCritter(c);director.onKill();
-     if(chance(.48))addPickup(c.x,c.y);
+     if(chance(.53))addPickup(c.x,c.y,chance(.15)?"multiplier":undefined);
      critters.splice(h.index,1);saveBest();
     }
     consumed=true;
@@ -581,6 +587,7 @@ function updatePickups(dt){
  for(let i=pickups.length-1;i>=0;i--){
   const p=pickups[i];
   p.time+=dt;
+  p.shotCooldown=Math.max(0,(p.shotCooldown||0)-dt);
   p.vy+=245*dt;
   p.x+=(p.vx+Math.sin(p.time*3.6+p.phase)*14)*dt;
   p.y+=p.vy*dt;
@@ -594,7 +601,7 @@ function updatePickups(dt){
    p.vx+=Math.sin(p.time*5+p.phase)*17;
    p.bounces++;
   }
-  if(distance(p.x,p.y,player.x,player.y)<24){
+  if(p.type!=="multiplier"&&distance(p.x,p.y,player.x,player.y)<24){
    pickups.splice(i,1);applyPickup(p);
   }else if(p.time>14)pickups.splice(i,1);
  }
@@ -603,7 +610,7 @@ function updateParticles(dt){for(let i=particles.length-1;i>=0;i--){const p=part
 function update(dt){
  elapsed+=dt;shotTimer-=dt;
  player.inv=Math.max(0,player.inv-dt);
- for(const k of ["rapid","spread","shield","guided","ricochet","frenzy"])
+ for(const k of ["rapid","spread","shield","guided","ricochet","ghost","frenzy"])
   player[k]=Math.max(0,(player[k]||0)-dt);
  bonus=Math.max(0,bonus-dt*(70+wave*5));
  flash=Math.max(0,flash-dt);runTime+=dt;
@@ -617,8 +624,14 @@ function update(dt){
  player.tx=clamp(player.tx,24,W-24);
  player.ty=clamp(player.ty,PLAY_TOP+8,H-31);
  const responsiveness=Math.min(1,dt*23);
- player.x+=(player.tx-player.x)*responsiveness;
- player.y+=(player.ty-player.y)*responsiveness;
+ const candidateX=player.x+(player.tx-player.x)*responsiveness;
+ const candidateY=player.y+(player.ty-player.y)*responsiveness;
+ if(player.ghost>0||!yummies.blocker(candidateX,candidateY,mushrooms,PLAY_TOP)){
+  player.x=candidateX;player.y=candidateY;
+ }else{
+  if(!yummies.blocker(candidateX,player.y,mushrooms,PLAY_TOP))player.x=candidateX;
+  if(!yummies.blocker(player.x,candidateY,mushrooms,PLAY_TOP))player.y=candidateY;
+ }
  if(firing||held.has("Space"))shoot();
  updateGroups(dt);updateCritters(dt);
  living.update(dt);

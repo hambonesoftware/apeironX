@@ -60,3 +60,25 @@ The original published Apple/Mac game is a reference for atmosphere, not a sourc
 ## Acknowledgment
 
 *Apeiron* and *Apeiron X*, the original artwork, audio, characters, and trademarks are the work of their respective rights holders, including Ambrosia Software. This non-commercial fan project is not affiliated with or endorsed by Ambrosia Software; it uses independently drawn graphics, synthesized sounds, and original source code.
+
+## Ambrosia-original "Yummies" fidelity pass (November 2026)
+
+The collectible bonus system now follows the **Apeiron 1995 official FAQ**, rather than borrowing Barrack's power-ups. Apeiron X kept the original game's core mechanics. This remains an independently coded and independently illustrated tribute, not a licensed reconstruction.
+
+- **Squiggly-line coin:** Guided plasma that curves toward the Pentipede.
+- **Diamond coin:** Pass through mushrooms in the lower player area; ordinary movement is obstructed by those mushrooms.
+- **Orange vertical dashes:** Rapid-fire machine gun.
+- **Sprinkly Shield:** Timed invulnerability, not a one-hit shield.
+- **Yummy Lock:** The acquired persistent weapon and diamond powers survive death; without the lock, death clears them.
+- **House Cleaning:** Clears mushrooms out of the player's lower area.
+- **Extra Man:** One additional crystal, capped at eight lives.
+- **Bonus Multiplier:** Special ×2 bonus multiplier target, **shot** to collect, which multiplies the end-of-wave bonus. Ordinary enemy scores are not multiplied by it.
+- **Psychedelic mushroom:** Triggered by shooting the glowing mushroom, awarding ×10 scoring temporarily and distinct synthesized feedback.
+
+Regular coins bounce away when struck by plasma shots; collecting them requires catching them with the crystal instead. Shoot a multiplier target to activate it. Coins expire if ignored, and can be knocked out of reach. Seven original types are the normal drop pool, with original-inspired sprite symbols. The existing custom triple-plasma/ricochet code is retained for compatibility, but those powers no longer drop as ordinary coins.
+
+Weapon/diamond powers last until death (or beyond with Yummy Lock). Timed shield/frenzy effects expire normally. Exact random odds, shot physics and art have been tuned for this browser homage rather than asserted to match proprietary internals.
+
+**Sources:** [Ambrosia Apeiron FAQ (1995)](https://groups.google.com/g/comp.sys.mac.games/c/89G3QB08HYI) and [Macworld on Apeiron X retaining original gameplay (2004)](https://www.macworld.com/article/173441/apeironx.html).
+
+**Verification:** `tests/yummies.test.cjs` checks 10,000 seeded drop draws, coin recoil, blocker, lock and life behavior; `tests/smoke.test.cjs` checks the integrated game interactions; the existing 36-run bot and 3,000-encounter director checks still run. A Chromium browser check tests phone/tablet/desktop viewports and touch. These do not substitute for real-device iOS Safari testing.

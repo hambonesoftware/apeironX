@@ -366,60 +366,94 @@
     }
   }
 
+  function yummySymbol(g, type, ink, light) {
+    g.save();
+    g.fillStyle=light;g.strokeStyle=light;g.lineCap="round";g.lineJoin="round";g.lineWidth=4;
+    if(type==="guided") {
+      // Ambrosia's squiggly-line tracking emblem.
+      g.beginPath();g.moveTo(-15,13);g.bezierCurveTo(-22,-6,3,2,-4,-12);
+      g.bezierCurveTo(-7,-18,6,-18,11,-12);g.stroke();
+      path(g,light,[7,-18,18,-12,7,-7]);
+    } else if(type==="ghost") {
+      // The transparent-mushroom pass-through diamond.
+      path(g,light,[0,-20,16,0,0,20,-16,0]);
+      path(g,ink,[0,-10,8,0,0,10,-8,0]);
+      g.strokeStyle=ink;g.lineWidth=1.8;g.beginPath();g.moveTo(0,-20);g.lineTo(0,20);g.stroke();
+    } else if(type==="rapid") {
+      // Multiple upright orange plasma dashes.
+      for(let k=-1;k<=1;k++){
+        const x=k*10;
+        g.fillRect(x-2.8,-16,5.6,9);
+        g.fillRect(x-2.8,-2,5.6,9);
+        g.fillRect(x-2.8,12,5.6,4);
+      }
+    } else if(type==="shield") {
+      // Sprinkly shield: eight independent sparkling shards.
+      for(let k=0;k<8;k++){
+        const a=k*TAU/8, x=Math.cos(a)*14,y=Math.sin(a)*14;
+        g.beginPath();g.moveTo(x-4,y);g.lineTo(x+4,y);
+        g.moveTo(x,y-4);g.lineTo(x,y+4);g.stroke();
+      }
+      g.beginPath();g.arc(0,0,7,0,TAU);g.fill();
+    } else if(type==="lock") {
+      g.lineWidth=4.5;g.beginPath();g.arc(0,-8,10,Math.PI,0);g.lineTo(10,1);g.stroke();
+      g.fillRect(-15,-1,30,21);g.fillStyle=ink;g.beginPath();g.arc(0,7,3,0,TAU);g.fill();g.fillRect(-1.6,8,3.2,7);
+    } else if(type==="cleanse") {
+      // House-cleaning sweep of the bottom patch.
+      g.lineWidth=4;g.beginPath();g.moveTo(7,-18);g.lineTo(-4,5);g.stroke();
+      path(g,light,[-12,3,2,9,-5,19,-19,12]);
+      g.strokeStyle=ink;g.lineWidth=1.6;
+      for(let i=0;i<3;i++){g.beginPath();g.moveTo(-15+i*4,8);g.lineTo(-18+i*4,15);g.stroke();}
+    } else if(type==="life") {
+      path(g,light,[0,-21,14,-7,11,13,0,21,-11,13,-14,-7]);
+      g.strokeStyle=ink;g.lineWidth=2;g.beginPath();g.moveTo(0,-21);g.lineTo(0,20);g.moveTo(-14,-7);g.lineTo(14,-7);g.stroke();
+    } else if(type==="multiplier"||type==="multi") {
+      g.fillStyle=light;g.textAlign="center";g.textBaseline="middle";g.font="bold 24px Georgia,serif";g.fillText("×2",0,1);
+    } else {
+      g.fillStyle=light;g.textAlign="center";g.textBaseline="middle";g.font="bold 27px Georgia,serif";
+      g.fillText(type==="spread"?"3":"↗",0,1);
+    }
+    g.restore();
+  }
   function pickupSprite(type) {
     const schemes = {
-      rapid:  ["#ffdf83", "#e8a135", "#854014", "#ffeaa7", "R"],
-      spread: ["#f8b6ff", "#b95cce", "#51256f", "#ffdcff", "3"],
-      shield: ["#c0faff", "#5ebddf", "#155a91", "#edffff", "S"],
-      multi:  ["#fff6b8", "#f2bb35", "#935111", "#ffffff", "×2"],
-      life:   ["#b9ffc3", "#4ac47a", "#16634c", "#e2ffe6", "+"],
-      guided: ["#b3ff9d", "#4dc97b", "#196149", "#f4ffbb", "G"],
-      ricochet: ["#d7c2ff", "#946bd7", "#46357f", "#f8eaff", "↗"],
-      cleanse: ["#f4f7c6", "#87ba6a", "#38663a", "#ffffff", "C"]
+      rapid:      ["#ffdf83","#d88a28","#854014","#ffeaa7"],
+      shield:     ["#c0faff","#5ebddf","#155a91","#edffff"],
+      multiplier: ["#fff6b8","#f2bb35","#935111","#ffffff"],
+      multi:      ["#fff6b8","#f2bb35","#935111","#ffffff"],
+      life:       ["#b9ffc3","#4ac47a","#16634c","#e2ffe6"],
+      guided:     ["#b3ff9d","#4dc97b","#196149","#f4ffbb"],
+      ghost:      ["#e0faff","#76bde8","#26618f","#ffffff"],
+      lock:       ["#fbe7ad","#dda34b","#835020","#fff9d2"],
+      cleanse:    ["#f4f7c6","#87ba6a","#38663a","#ffffff"],
+      spread:     ["#f8b6ff","#b95cce","#51256f","#ffdcff"],
+      ricochet:   ["#d7c2ff","#946bd7","#46357f","#f8eaff"]
     };
-    const [bright, mid, dark, glint, glyph] = schemes[type] || schemes.multi;
-    return sprite(96, 96, g => {
-      g.save();
-      g.translate(48, 48);
-      g.shadowColor = mid;
-      g.shadowBlur = 17;
-      ellipse(g, 0, 0, 31, 31, mid);
-      g.shadowBlur = 0;
-      const rim = g.createLinearGradient(-30, -30, 30, 30);
-      rim.addColorStop(0, bright);rim.addColorStop(.23, mid);
-      rim.addColorStop(.55, dark);rim.addColorStop(.72, bright);
-      rim.addColorStop(1, dark);
-      g.fillStyle = rim;
-      g.beginPath();g.arc(0, 0, 30, 0, TAU);g.fill();
-      g.strokeStyle = "#17140a92";g.lineWidth = 2.5;g.stroke();
-      g.strokeStyle = glint;g.lineWidth = 2.2;
-      g.beginPath();g.arc(0, 0, 26, .7, 4.6);g.stroke();
-      // Notched, machined edge and an embossed medallion.
-      for (let i = 0; i < 24; i++) {
-        const theta = i * TAU / 24;
-        g.strokeStyle = i % 2 ? glint : dark;
-        g.lineWidth = 1.8;
-        g.beginPath();
-        g.moveTo(Math.cos(theta) * 27, Math.sin(theta) * 27);
-        g.lineTo(Math.cos(theta) * 29.5, Math.sin(theta) * 29.5);
-        g.stroke();
+    const [bright,mid,dark,glint]=schemes[type] || schemes.multiplier;
+    return sprite(96,96,g=>{
+      g.save();g.translate(48,48);g.shadowColor=mid;g.shadowBlur=17;
+      ellipse(g,0,0,31,31,mid);g.shadowBlur=0;
+      const rim=g.createLinearGradient(-30,-30,30,30);
+      rim.addColorStop(0,bright);rim.addColorStop(.23,mid);rim.addColorStop(.55,dark);
+      rim.addColorStop(.72,bright);rim.addColorStop(1,dark);
+      g.fillStyle=rim;g.beginPath();g.arc(0,0,30,0,TAU);g.fill();
+      g.strokeStyle="#17140a92";g.lineWidth=2.5;g.stroke();
+      g.strokeStyle=glint;g.lineWidth=2.2;g.beginPath();g.arc(0,0,26,.7,4.6);g.stroke();
+      for(let i=0;i<24;i++){
+        const theta=i*TAU/24;
+        g.strokeStyle=i%2?glint:dark;g.lineWidth=1.8;
+        g.beginPath();g.moveTo(Math.cos(theta)*27,Math.sin(theta)*27);
+        g.lineTo(Math.cos(theta)*29.5,Math.sin(theta)*29.5);g.stroke();
       }
-      const face = g.createRadialGradient(-9, -12, 3, 0, 0, 24);
-      face.addColorStop(0, bright);face.addColorStop(.55, mid);face.addColorStop(1, dark);
-      g.fillStyle = face;g.beginPath();g.arc(0, 0, 22, 0, TAU);g.fill();
-      g.strokeStyle = glint;g.lineWidth = 1.5;g.stroke();
-      g.textAlign = "center";g.textBaseline = "middle";
-      g.font = type === "multi" ? "bold 24px Georgia" : "bold 32px Georgia";
-      g.fillStyle = dark;g.fillText(glyph, 1.6, 3);
-      g.fillStyle = glint;g.fillText(glyph, 0, .4);
-      // Diagonal glassy glare and two pinprick highlights.
-      g.save();
-      g.beginPath();g.arc(0, 0, 21, 0, TAU);g.clip();
-      g.fillStyle = "#ffffff3e";
-      g.beginPath();g.ellipse(-9, -16, 23, 5, -.55, 0, TAU);g.fill();
-      g.restore();
-      ellipse(g, -14, -17, 2.7, 1.9, "#ffffffdb", -.3);
-      ellipse(g, 16, 13, 1.7, 1.3, glint);
+      const face=g.createRadialGradient(-9,-12,3,0,0,24);
+      face.addColorStop(0,bright);face.addColorStop(.55,mid);face.addColorStop(1,dark);
+      g.fillStyle=face;g.beginPath();g.arc(0,0,22,0,TAU);g.fill();
+      g.strokeStyle=glint;g.lineWidth=1.5;g.stroke();
+      yummySymbol(g,type,dark,glint);
+      g.save();g.beginPath();g.arc(0,0,21,0,TAU);g.clip();
+      g.fillStyle="#ffffff3e";g.beginPath();g.ellipse(-9,-16,23,5,-.55,0,TAU);g.fill();g.restore();
+      ellipse(g,-14,-17,2.7,1.9,"#ffffffdb",-.3);
+      ellipse(g,16,13,1.7,1.3,glint);
       g.restore();
     });
   }
@@ -429,8 +463,8 @@
       const y = p.y + Math.sin(t * 6 + p.phase) * 1.8;
       const spin = t * 5.2 + p.spin;
       const squash = .28 + .72 * Math.abs(Math.cos(spin));
-      const glow = p.type === "multi" ? "#ffdf55" : p.type === "shield" ? "#8beaff" :
-        p.type === "spread" ? "#e995ff" : p.type === "life" ? "#97f8aa" : "#ffc76a";
+      const glow = p.type === "multiplier" ? "#ffdf55" : p.type === "shield" || p.type === "ghost" ? "#8beaff" :
+        p.type === "lock" ? "#ffe1aa" : p.type === "life" ? "#97f8aa" : "#ffc76a";
       g.save();
       g.globalAlpha = Math.max(0, Math.min(1, (14 - p.time) * .72));
       g.fillStyle = "rgba(22,22,12,.24)";
@@ -572,6 +606,17 @@
     g.fillStyle="rgba(4,21,24,.54)";
     g.beginPath();g.ellipse(x+5,y+17,19,5,0,0,TAU);g.fill();
     g.save();g.translate(x,y);
+    if(player.ghost>0) {
+      g.strokeStyle="#d1f9ff";g.lineWidth=1.6;
+      g.shadowColor="#87deff";g.shadowBlur=11;
+      const arc=21+Math.sin(time*3.4)*2.1;
+      g.beginPath();g.moveTo(0,-arc);g.lineTo(arc*.65,0);g.lineTo(0,arc);
+      g.lineTo(-arc*.65,0);g.closePath();g.stroke();g.shadowBlur=0;
+    }
+    if(player.lock) {
+      g.fillStyle="#ffe9a9";g.shadowColor="#f3b564";g.shadowBlur=7;
+      g.fillRect(-3,-35,6,4);g.shadowBlur=0;
+    }
     if(player.shield>0){
       g.strokeStyle="#b8fcfd";g.lineWidth=2;
       g.shadowColor="#53cbfc";g.shadowBlur=14;

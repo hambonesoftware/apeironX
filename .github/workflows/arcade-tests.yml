@@ -6,6 +6,7 @@ on:
       - 'index.html'
       - 'art.js'
       - 'living-patch.js'
+      - 'apeiron-bonuses.js'
       - 'arcade-director.js'
       - 'arcade-scores.js'
       - 'tests/**'
@@ -15,6 +16,7 @@ on:
       - 'index.html'
       - 'art.js'
       - 'living-patch.js'
+      - 'apeiron-bonuses.js'
       - 'tests/**'
 jobs:
   smoke:
@@ -31,7 +33,22 @@ jobs:
           node-version: '22'
       - name: Run simulation
         run: |
+          node --check apeiron-bonuses.js
+          node tests/yummies.test.cjs
           node tests/smoke.test.cjs
           node tests/director-balance.test.cjs
           node tests/scores.test.cjs
           node tests/bot-play.test.cjs
+      - name: Install Chromium test runner
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Validate mobile and desktop gameplay
+        run: node --test tests/browser-yummies.test.cjs
+      - name: Upload browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apeiron-yummies-browser-screenshots
+          path: test-artifacts/*.png
+          if-no-files-found: ignore

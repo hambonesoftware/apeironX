@@ -50,10 +50,14 @@ jobs:
           name: apeiron-yummies-release-screenshots
           path: test-artifacts/*.png
           if-no-files-found: ignore
+      - name: Stage only deployable browser assets
+        run: |
+          mkdir -p site
+          cp index.html art.js living-patch.js arcade-director.js arcade-scores.js apeiron-bonuses.js .nojekyll site/
       - name: Upload static HTML game
         uses: actions/upload-pages-artifact@v4
         with:
-          path: .
+          path: site
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

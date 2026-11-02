@@ -23,8 +23,33 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify original-yummy mechanics and complete arcade suite
+        run: |
+          node --check apeiron-bonuses.js
+          node tests/yummies.test.cjs
+          node tests/smoke.test.cjs
+          node tests/director-balance.test.cjs
+          node tests/scores.test.cjs
+          node tests/bot-play.test.cjs
+      - name: Install Chromium test runner
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Test iPhone, iPad and desktop browser presentation
+        run: node --test tests/browser-yummies.test.cjs
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+      - name: Upload browser QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apeiron-yummies-release-screenshots
+          path: test-artifacts/*.png
+          if-no-files-found: ignore
       - name: Upload static HTML game
         uses: actions/upload-pages-artifact@v4
         with:

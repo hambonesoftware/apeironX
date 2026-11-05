@@ -4,7 +4,7 @@ A playable, original-code browser homage to Ambrosia Software's *Apeiron* (1995)
 
 ## Play
 
-**[Play Apeiron X v0.4 on GitHub Pages](https://hambonesoftware.github.io/apeironX/)**
+**[Play Apeiron X — latest GitHub Pages build](https://hambonesoftware.github.io/apeironX/)**
 
 If the link gives a 404, open [Settings → Pages](https://github.com/hambonesoftware/apeironX/settings/pages) and set:
 - **Source:** Deploy from a branch
@@ -16,10 +16,22 @@ If the link gives a 404, open [Settings → Pages](https://github.com/hambonesof
 
 | Platform | Move | Fire | Pause |
 | --- | --- | --- | --- |
-| Desktop | Mouse, arrows, or WASD | Hold mouse button or Space | P, Escape, or Pause button |
-| iPhone / iPad | Drag your finger in the game field | Auto-fire while touching | Pause button |
+| Desktop | Direct, responsive mouse positioning; arrows or WASD | Mouse press or Space fires instantly; hold for repeat | P, Escape, or Pause button |
+| iPhone / iPad | **Trackpad (default):** touch and drag to move by your finger’s movement, without jumping to the touch location. **Direct:** crystal follows your finger; switch under ☰ options. | Touch and hold to fire; shots start immediately | Pause button |
 
 Audio starts after pressing **Enter the Patch** (browser autoplay policy). **Sound On/Off** in the top bar.
+
+## Arcade Control Fidelity update (Nov 2026)
+
+A targeted gameplay-feel revision based on original Macintosh descriptions of precise mouse control and automatic repeated shots.
+
+- **Zero-easing control:** mouse and finger movement directly control the crystal, rather than interpolating toward a delayed target. Mushroom collision is still enforced along the movement path; Diamond/pass-through remains effective.
+- **Thumb-friendly touch:** the default touch mode uses relative trackpad movement: placing a finger on the field starts firing but does not teleport the crystal underneath the finger. Moving that finger moves the crystal by the same on-screen amount. Direct touch positioning remains selectable in the in-game ☰ arcade options; the choice is stored locally.
+- **Immediate trigger:** mouse press, finger-down, and first Space press create a plasma shot without waiting for the next simulation frame. Release/re-press resets the initial shot delay. Sustained fire is tuned at about 7.6 shots per second, versus roughly 14.5 with machine-gun power.
+- **Visible plasma:** glowing bolts now draw with the correct tail-to-tip direction, instead of an almost zero-length line. A brief muzzle flash reinforces each shot.
+- **Fair reaction order:** shots resolve before enemy contact damage in the same frame, so a last-instant hit can save the player rather than register as an unavoidable death.
+- **Input regression tests:** `tests/arcade-feel.test.cjs` exercises pointer event handling, default trackpad drag, direct mode, immediate firing, visible shot direction, and shots beating simultaneous contact. Browser tests also exercise the touch-mode options on emulated phone and tablet.
+- This is a feel-focused refinement, **not an assertion of exact original shot frequency or input filtering**; physical-device play remains the best validation of the subjective controls.
 
 ## Arcade Perfection v0.5
 

@@ -95,3 +95,26 @@ body{
 @media(prefers-reduced-motion:reduce){
  .field-wrap .hb-play *{animation:none!important;transition:none!important}
 }
+
+/* A physical cabinet marquee uses the unused letterbox space on tall phones.
+   The playable 720:760 canvas keeps its original aspect ratio and coordinates. */
+@media (max-width:540px) and (orientation:portrait) and (min-height:650px) {
+  body::before {
+    content:"APEIRON X";
+    position:fixed;left:0;right:0;top:7.4dvh;
+    z-index:1;pointer-events:none;text-align:center;
+    font:italic 900 clamp(31px,10vw,52px)/1 Georgia,"Times New Roman",serif;
+    letter-spacing:-.06em;color:#e8c57c;
+    -webkit-text-stroke:.35px #c68c37;
+    text-shadow:0 2px #66482d,1px 4px #060d0a,0 0 25px #dcb86955;
+  }
+  body::after {
+    content:"DRAG TO MOVE  ·  AUTO-FIRE";
+    position:fixed;left:0;right:0;bottom:8dvh;
+    z-index:1;pointer-events:none;text-align:center;
+    font:700 clamp(10px,2.6vw,13px)/1.4 system-ui,sans-serif;
+    letter-spacing:.14em;color:#c2b791;
+    text-shadow:0 2px 5px #000;
+  }
+  .shell { position:relative;z-index:2; }
+}

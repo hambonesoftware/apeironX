@@ -109,7 +109,7 @@ body{
     text-shadow:0 2px #66482d,1px 4px #060d0a,0 0 25px #dcb86955;
   }
   body::after {
-    content:"DRAG TO MOVE  ·  AUTO-FIRE";
+    content:"DRAG TO STEER  ·  HOLD TO FIRE";
     position:fixed;left:0;right:0;bottom:8dvh;
     z-index:1;pointer-events:none;text-align:center;
     font:700 clamp(10px,2.6vw,13px)/1.4 system-ui,sans-serif;

@@ -156,7 +156,7 @@ html,body{overscroll-behavior:none}
     <div class="side-foot">ORIGINAL FAN-MADE ART & AUDIO<br>NOT AFFILIATED WITH AMBROSIA SOFTWARE</div>
   </aside>
 </main>
-<footer class="hud-bottom"><span class="tagline">A lush, shadowed, fast-paced homage to a classic Macintosh favorite.</span><span id="touchHint">On mobile: drag your finger and the crystal auto-fires.</span><span id="highScore">BEST 000000</span></footer>
+<footer class="hud-bottom"><span class="tagline">A lush, shadowed, fast-paced homage to a classic Macintosh favorite.</span><span id="touchHint">On mobile: drag like a trackpad. Hold to fire. Switch modes in ☰.</span><span id="highScore">BEST 000000</span></footer>
 <script src="apeiron-bonuses.js?v=20261102-ambrosia"></script>
  <script src="art.js?v=20261102-yummies"></script>
 <script src="living-patch.js?v=20261101-v04"></script>
@@ -176,7 +176,17 @@ const leaderboard=window.ApeironScores.create();
 let scoreSubmitted=false,runTime=0;
 let mushrooms=[],groups=[],shots=[],particles=[],pickups=[],critters=[];
 let firing=false,held=new Set(),spawnTimer=5,shotTimer=0,waveTimer=0,elapsed=0,flash=0,frameTime=0,audio=null,mute=false,floatingTime=0;
-let pointerIsTouch=false;
+let pointerIsTouch=false,activePointerId=null,touchLastX=0,touchLastY=0;
+let touchMode="trackpad";
+try{if(localStorage.getItem("apeiron-touch-mode")==="direct")touchMode="direct"}catch(e){}
+window.ApeironControls={
+ getMode:()=>touchMode,
+ setMode:mode=>{
+  touchMode=mode==="direct"?"direct":"trackpad";
+  try{localStorage.setItem("apeiron-touch-mode",touchMode)}catch(e){}
+  return touchMode;
+ }
+};
 let masterAudio=null,noiseBuffer=null,activeVoices=0;
 function rnd(a,b){return a+Math.random()*(b-a)}function chance(p){return Math.random()<p}function clamp(v,a,b){return Math.max(a,Math.min(b,v))}function distance(a,b,c,d){return Math.hypot(a-c,b-d)}
 function makeOff(w,h){const c=document.createElement("canvas");c.width=w;c.height=h;return [c,c.getContext("2d")]}
@@ -341,7 +351,7 @@ function newGroup(segments,dir,phase=0){
 function createPentipede(){groups=[];const length=Math.min(10+Math.floor(wave*.6),18);const arr=[];for(let i=0;i<length;i++)arr.push({x:W-120-i*STEP,y:82});newGroup(arr,1)}
 function resetGame(){
  mode="playing";score=0;wave=1;lives=3;multiplier=1;bonus=4500;elapsed=0;
- spawnTimer=6.2;flash=0;shotTimer=0;runTime=0;scoreSubmitted=false;shots=[];particles=[];pickups=[];critters=[];
+ spawnTimer=6.2;flash=0;shotTimer=0;firing=false;activePointerId=null;runTime=0;scoreSubmitted=false;shots=[];particles=[];pickups=[];critters=[];
  director.start(1);
  player={x:360,y:701,tx:360,ty:701,inv:2,rapid:0,spread:0,shield:0,guided:0,ricochet:0,ghost:0,lock:false,frenzy:0};
  living.reset(wave);seedGrass();seedMushrooms();createPentipede();hideOverlay();
@@ -398,15 +408,17 @@ function applyPickup(p){
  burst(p.x,p.y,"#ffdf70",24,140);sfx.power();syncHud();
 }
 function shoot(){
- const period=player.rapid>0?.072:.155;
- if(shotTimer>0)return;shotTimer=period;
+ if(mode!=="playing"||shotTimer>0)return;
+ const period=player.rapid>0?.069:.132;
+ shotTimer+=period;
  const n=player.spread>0?3:1;
  for(let i=0;i<n;i++){
   const a=(i-(n-1)/2)*.2;
-  shots.push({x:player.x,y:player.y-19,vx:Math.sin(a)*340,
-   vy:-750*Math.cos(a),life:1.65,bounces:0,reflectWait:0,
+  shots.push({x:player.x,y:player.y-27,vx:Math.sin(a)*340,
+   vy:-790*Math.cos(a),life:1.65,bounces:0,reflectWait:0,
    ricochet:player.ricochet>0,guided:player.guided>0});
  }
+ player.muzzle=.065;
  sfx.shoot();
 }
 function enemyHit(gi,si){
@@ -516,7 +528,7 @@ function updateCritters(dt){
   }
   living.critterBehavior(c,dt);
   if(c.x<-100||c.x>W+100||c.y>H+80){critters.splice(i,1);continue}
-  if(distance(c.x,c.y,player.x,player.y)<25)loseLife();
+  // Contact damage is handled after projectiles, allowing a last-second saving shot.
  }
 }
 // Swept collision prevents fast plasma from passing between frames on slow phones.
@@ -626,30 +638,18 @@ function update(dt){
  flash=Math.max(0,flash-dt);runTime+=dt;
  const encounter=director.tick(dt,{critters,groups,lives,PLAY_TOP});
  if(encounter)spawnCritter(encounter.type);
- const mov=390*dt;
+ player.muzzle=Math.max(0,(player.muzzle||0)-dt);
+ const mov=450*dt;
  if(held.has("ArrowLeft")||held.has("KeyA"))player.tx-=mov;
  if(held.has("ArrowRight")||held.has("KeyD"))player.tx+=mov;
  if(held.has("ArrowUp")||held.has("KeyW"))player.ty-=mov;
  if(held.has("ArrowDown")||held.has("KeyS"))player.ty+=mov;
- player.tx=clamp(player.tx,24,W-24);
- player.ty=clamp(player.ty,PLAY_TOP+8,H-31);
- const responsiveness=Math.min(1,dt*23);
- const candidateX=player.x+(player.tx-player.x)*responsiveness;
- const candidateY=player.y+(player.ty-player.y)*responsiveness;
- if(player.ghost>0||!yummies.blocker(candidateX,candidateY,mushrooms,PLAY_TOP)){
-  player.x=candidateX;player.y=candidateY;
- }else{
-  if(!yummies.blocker(candidateX,player.y,mushrooms,PLAY_TOP))player.x=candidateX;
-  if(!yummies.blocker(player.x,candidateY,mushrooms,PLAY_TOP))player.y=candidateY;
- }
+ moveCrystalTo(player.tx,player.ty);
  if(firing||held.has("Space"))shoot();
  updateGroups(dt);updateCritters(dt);
  living.update(dt);
  updateShots(dt);updatePickups(dt);updateParticles(dt);
- for(const g of groups)for(let i=0;i<g.segments.length;i++){
-  const p=artwork.pentipedePosition(g,i);
-  if(distance(player.x,player.y,p.x,p.y)<19){loseLife();break}
- }
+ resolvePlayerContacts();
  if(Math.floor(elapsed*8)!==Math.floor((elapsed-dt)*8))syncHud();
 }
 function tickBetween(dt){waveTimer-=dt;updateParticles(dt);if(waveTimer<=0)nextWave()}
@@ -702,13 +702,18 @@ function drawPentipedes(){artwork.drawPentipedes(ctx,groups,elapsed)}
 function drawCritters(){artwork.drawCritters(ctx,critters,frameTime)}
 function drawCrystal(){artwork.drawCrystal(ctx,player,frameTime)}
 function drawShots(){
+ ctx.save();ctx.lineCap="round";
  for(const s of shots){
+  const v=Math.hypot(s.vx,s.vy)||1,ux=s.vx/v,uy=s.vy/v;
   ctx.strokeStyle=s.guided?"#aaffb2":s.ricochet?"#e1b4ff":"#b8faff";
-  ctx.lineWidth=s.guided?4:3.5;ctx.shadowBlur=11;
+  ctx.lineWidth=s.guided?3.2:2.7;ctx.shadowBlur=8;
   ctx.shadowColor=s.guided?"#5bff8c":s.ricochet?"#c18cff":"#58ccff";
-  ctx.beginPath();ctx.moveTo(s.x,s.y+12);ctx.lineTo(s.x-s.vx*.018,s.y-s.vy*.018);ctx.stroke();
-  ctx.shadowBlur=0;
+  ctx.beginPath();ctx.moveTo(s.x-ux*17,s.y-uy*17);
+  ctx.lineTo(s.x+ux*5,s.y+uy*5);ctx.stroke();
+  ctx.shadowBlur=0;ctx.fillStyle="#fff";
+  ctx.beginPath();ctx.arc(s.x+ux*5,s.y+uy*5,1.4,0,TAU);ctx.fill();
  }
+ ctx.restore();
 }
 function drawPickups(){artwork.drawPickups(ctx,pickups,elapsed)}
 function drawParticles(){for(const p of particles){ctx.globalAlpha=Math.min(1,p.life/p.max);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life/p.max,0,TAU);ctx.fill()}ctx.globalAlpha=1}
@@ -718,7 +723,14 @@ function render(){
  ctx.save();ctx.translate(offset.x,offset.y);
  ctx.drawImage(grass,0,0);
  drawMushrooms();drawPickups();drawCritters();drawPentipedes();
- drawShots();drawCrystal();drawParticles();
+ drawShots();drawCrystal();
+ if(player.muzzle>0&&mode==="playing"){
+  ctx.save();ctx.globalAlpha=Math.min(1,player.muzzle/.065);
+  ctx.fillStyle="#f2ffff";ctx.shadowColor="#71e7ff";ctx.shadowBlur=12;
+  ctx.beginPath();ctx.ellipse(player.x,player.y-26,4,8,0,0,TAU);ctx.fill();
+  ctx.restore();
+ }
+ drawParticles();
  living.render(ctx,artwork);
  ctx.fillStyle=vignette;ctx.fillRect(0,0,W,H);
  if(flash>0){ctx.fillStyle="rgba(210,243,255,"+(flash*.8)+")";ctx.fillRect(0,0,W,H)}
@@ -728,16 +740,97 @@ function render(){
 }
 let lastTime=0;
 function loop(timestamp){const dt=Math.min(.045,(timestamp-lastTime)/1000||.016);lastTime=timestamp;frameTime+=dt;floatingTime=Math.max(0,floatingTime-dt);if(mode==="playing")update(dt);else if(mode==="between")tickBetween(dt);else updateParticles(dt);render();requestAnimationFrame(loop)}
-function pointerPos(ev){const rect=canvas.getBoundingClientRect(),x=(ev.clientX-rect.left)*W/rect.width,y=(ev.clientY-rect.top)*H/rect.height;return {x:clamp(x,23,W-23),y:clamp(y,PLAY_TOP+8,H-32)}}
-canvas.addEventListener("pointerdown",ev=>{if(mode!=="playing")return;ev.preventDefault();const p=pointerPos(ev);player.tx=p.x;player.ty=p.y;pointerIsTouch=ev.pointerType==="touch";firing=true;audioReady();try{canvas.setPointerCapture(ev.pointerId)}catch(e){}});
-canvas.addEventListener("pointermove",ev=>{if(mode!=="playing")return;if(ev.pointerType==="mouse"||firing){const p=pointerPos(ev);player.tx=p.x;player.ty=p.y;}});
-canvas.addEventListener("pointerup",()=>{firing=false;pointerIsTouch=false});canvas.addEventListener("pointercancel",()=>{firing=false;pointerIsTouch=false});window.addEventListener("pointerup",()=>{firing=false;pointerIsTouch=false});
-window.addEventListener("keydown",ev=>{if(["Space","ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(ev.code))ev.preventDefault();if(ev.code==="KeyP"||ev.code==="Escape"){if(!ev.repeat)togglePause();return}if(ev.code==="Enter"&&mode==="menu"){resetGame();return}if(ev.code==="Enter"&&mode==="over"&&!document.getElementById("scoreInitials")){resetGame();return}held.add(ev.code);if(ev.code==="Space")audioReady()});
-window.addEventListener("keyup",ev=>held.delete(ev.code));// Browser chrome, notification shade, or focus changes must not pause a live round.
-window.addEventListener("blur",()=>{held.clear();firing=false});
-document.addEventListener("visibilitychange",()=>{held.clear();firing=false;lastTime=performance.now()});
-// Keep mobile dragging inside the game; prevent Safari bounce and pull-to-refresh.
-document.addEventListener("touchmove",ev=>{if(ev.cancelable)ev.preventDefault()},{passive:false});
+function moveCrystalTo(x,y){
+ const targetX=clamp(x,24,W-24),targetY=clamp(y,PLAY_TOP+8,H-31);
+ player.tx=targetX;player.ty=targetY;
+ if(player.ghost>0){player.x=targetX;player.y=targetY;return}
+ const distanceToTarget=Math.hypot(targetX-player.x,targetY-player.y);
+ if(distanceToTarget<.01)return;
+ const steps=Math.max(1,Math.min(48,Math.ceil(distanceToTarget/11)));
+ const dx=(targetX-player.x)/steps,dy=(targetY-player.y)/steps;
+ for(let i=0;i<steps;i++){
+  const x=clamp(player.x+dx,24,W-24),y=clamp(player.y+dy,PLAY_TOP+8,H-31);
+  if(!yummies.blocker(x,y,mushrooms,PLAY_TOP)){
+   player.x=x;player.y=y;
+  }else{
+   let moved=false;
+   if(!yummies.blocker(x,player.y,mushrooms,PLAY_TOP)){player.x=x;moved=true}
+   if(!yummies.blocker(player.x,y,mushrooms,PLAY_TOP)){player.y=y;moved=true}
+   if(!moved)break;
+  }
+ }
+}
+function resolvePlayerContacts(){
+ if(mode!=="playing"||player.inv>0)return;
+ for(const c of critters)if(distance(c.x,c.y,player.x,player.y)<22){
+  loseLife();return;
+ }
+ for(const g of groups)for(let i=0;i<g.segments.length;i++){
+  const pt=artwork.pentipedePosition(g,i);
+  if(distance(player.x,player.y,pt.x,pt.y)<18){loseLife();return}
+ }
+}
+function pointerPos(ev){
+ const rect=canvas.getBoundingClientRect();
+ return {x:clamp((ev.clientX-rect.left)*W/rect.width,24,W-24),
+  y:clamp((ev.clientY-rect.top)*H/rect.height,PLAY_TOP+8,H-31)};
+}
+function pointerStop(ev){
+ if(activePointerId!==null&&ev&&ev.pointerId!==undefined&&ev.pointerId!==activePointerId)return;
+ firing=false;pointerIsTouch=false;activePointerId=null;
+ if(!held.has("Space"))shotTimer=0;
+}
+canvas.addEventListener("pointerdown",ev=>{
+ if(mode!=="playing"||activePointerId!==null)return;
+ ev.preventDefault();
+ activePointerId=ev.pointerId;pointerIsTouch=ev.pointerType==="touch";
+ touchLastX=ev.clientX;touchLastY=ev.clientY;
+ if(!pointerIsTouch||touchMode==="direct"){
+  const pt=pointerPos(ev);moveCrystalTo(pt.x,pt.y);
+ }
+ firing=true;shotTimer=0;audioReady();shoot();
+ try{canvas.setPointerCapture(ev.pointerId)}catch(e){}
+});
+canvas.addEventListener("pointermove",ev=>{
+ if(mode!=="playing")return;
+ if(ev.pointerType==="touch"){
+  if(!firing||ev.pointerId!==activePointerId)return;
+  if(touchMode==="direct"){
+   const pt=pointerPos(ev);moveCrystalTo(pt.x,pt.y);
+  }else{
+   const rect=canvas.getBoundingClientRect();
+   moveCrystalTo(player.tx+(ev.clientX-touchLastX)*W/rect.width,
+    player.ty+(ev.clientY-touchLastY)*H/rect.height);
+  }
+  touchLastX=ev.clientX;touchLastY=ev.clientY;
+ }else if(activePointerId===null||activePointerId===ev.pointerId){
+  const pt=pointerPos(ev);moveCrystalTo(pt.x,pt.y);
+ }
+});
+canvas.addEventListener("pointerup",pointerStop);
+canvas.addEventListener("pointercancel",pointerStop);
+window.addEventListener("pointerup",pointerStop);
+window.addEventListener("keydown",ev=>{
+ if(["Space","ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(ev.code))ev.preventDefault();
+ if(ev.code==="KeyP"||ev.code==="Escape"){if(!ev.repeat)togglePause();return}
+ if(ev.code==="Enter"&&mode==="menu"){resetGame();return}
+ if(ev.code==="Enter"&&mode==="over"&&!document.getElementById("scoreInitials")){resetGame();return}
+ if(ev.code==="Space"&&!held.has("Space")&&mode==="playing"){
+  audioReady();shotTimer=0;shoot();
+ }
+ held.add(ev.code);
+});
+window.addEventListener("keyup",ev=>{
+ held.delete(ev.code);
+ if(ev.code==="Space"&&!firing)shotTimer=0;
+});
+window.addEventListener("blur",()=>{held.clear();pointerStop()});
+document.addEventListener("visibilitychange",()=>{
+ held.clear();pointerStop();lastTime=performance.now();
+});
+document.addEventListener("touchmove",ev=>{
+ if(ev.cancelable)ev.preventDefault();
+},{passive:false});
 canvas.addEventListener("contextmenu",ev=>ev.preventDefault());
 function togglePause(){if(mode==="playing"){mode="paused";$("pauseBtn").textContent="▶ RESUME";showOverlay("PAUSED","The mushroom patch will wait for you.","RESUME GAME",()=>{audioReady();mode="playing";$("pauseBtn").textContent="Ⅱ PAUSE";hideOverlay()})}else if(mode==="paused"){mode="playing";$("pauseBtn").textContent="Ⅱ PAUSE";hideOverlay()}}
 $("pauseBtn").addEventListener("click",togglePause);

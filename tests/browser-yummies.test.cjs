@@ -48,6 +48,14 @@ test("Apeiron original-yummies browser smoke on iPhone, tablet and desktop", {ti
    assert.ok(box && box.width>200 && box.width<=device.width+2,"Canvas fits viewport: "+device.name);
    if(device.touch){
     await canvas.tap({position:{x:box.width*.5,y:box.height*.86}});
+    assert.equal(await page.evaluate(()=>window.ApeironControls.getMode()),"trackpad");
+    await page.locator("#hb-arcade-options").click();
+    await page.locator("#touchModeBtn").click();
+    assert.equal(await page.evaluate(()=>window.ApeironControls.getMode()),"direct");
+    assert.equal(await page.evaluate(()=>localStorage.getItem("apeiron-touch-mode")),"direct");
+    await page.locator("#touchModeBtn").click();
+    assert.equal(await page.evaluate(()=>window.ApeironControls.getMode()),"trackpad");
+    await page.locator("#hb-arcade-options").click();
    }else{
     await canvas.click({position:{x:box.width*.5,y:box.height*.86}});
    }

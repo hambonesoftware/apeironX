@@ -39,6 +39,24 @@ if(field && score && wave && lives && pause && sound && scores){
   const trayContent=document.createElement("div");
   trayContent.className="hb-arcade-controls";
   trayContent.append(sound,scores);
+  const touchControl=document.createElement("button");
+  touchControl.type="button";
+  touchControl.id="touchModeBtn";
+  function syncTouchControl(){
+    const mode=window.ApeironControls?.getMode?.()||"trackpad";
+    touchControl.textContent=mode==="trackpad"?"TOUCH: TRACKPAD":"TOUCH: DIRECT";
+    touchControl.setAttribute("aria-label","Change touch aiming between relative drag and direct positioning");
+    touchControl.title=mode==="trackpad"
+      ?"Drag moves the crystal relative to your finger. Tap and hold to fire."
+      :"Crystal follows your finger position. Tap and hold to fire.";
+  }
+  touchControl.addEventListener("click",()=>{
+    const current=window.ApeironControls?.getMode?.()||"trackpad";
+    window.ApeironControls?.setMode?.(current==="trackpad"?"direct":"trackpad");
+    syncTouchControl();
+  });
+  syncTouchControl();
+  trayContent.append(touchControl);
   stash.appendChild(trayContent);
   let trayOpen=false;
   const options=hud.addAction({

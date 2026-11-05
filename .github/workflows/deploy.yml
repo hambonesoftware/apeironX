@@ -41,6 +41,10 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Test iPhone, iPad and desktop browser presentation
         run: node --test tests/browser-yummies.test.cjs
+      - name: Validate classic arcade HUD structure
+        run: node tests/hud-play.test.cjs
+      - name: Test Classic Arcade touch and menu controls
+        run: node --test tests/browser-hud.test.cjs
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload browser QA screenshots
@@ -53,7 +57,8 @@ jobs:
       - name: Stage only deployable browser assets
         run: |
           mkdir -p site
-          cp index.html art.js living-patch.js arcade-director.js arcade-scores.js apeiron-bonuses.js .nojekyll site/
+          cp index.html art.js living-patch.js arcade-director.js arcade-scores.js apeiron-bonuses.js play-arcade.js play-arcade.css .nojekyll site/
+          cp -R vendor site/
       - name: Upload static HTML game
         uses: actions/upload-pages-artifact@v4
         with:

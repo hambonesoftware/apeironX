@@ -1,0 +1,14 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {readFileSync}=require("node:fs");
+const html=readFileSync("index.html","utf8"),css=readFileSync("play-arcade.css","utf8");
+const adapter=readFileSync("play-arcade.js","utf8");
+const common=readFileSync("vendor/hambone-play/hambone-play.js","utf8");
+assert(html.includes("play-arcade.js?v=1.0.0"));
+assert(html.includes("play-arcade.css?v=1.0.0"));
+assert(adapter.includes('style:"arcade"'));
+assert(adapter.includes('hud.placeControl(pause,"utilities")'));
+assert(adapter.includes('hud.bindReadout(score,"score")'));
+assert(css.includes(".site-header,.sidebar,.hud-bottom{display:none!important}"));
+assert(common.includes('export function createPlayHUD'));
+console.log("Hambone PLAY Classic Arcade adapter static QA passed.");

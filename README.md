@@ -82,3 +82,12 @@ Weapon/diamond powers last until death (or beyond with Yummy Lock). Timed shield
 **Sources:** [Ambrosia Apeiron FAQ (1995)](https://groups.google.com/g/comp.sys.mac.games/c/89G3QB08HYI) and [Macworld on Apeiron X retaining original gameplay (2004)](https://www.macworld.com/article/173441/apeironx.html).
 
 **Verification:** `tests/yummies.test.cjs` checks 10,000 seeded drop draws, coin recoil, blocker, lock and life behavior; `tests/smoke.test.cjs` checks the integrated game interactions; the existing 36-run bot and 3,000-encounter director checks still run. A Chromium browser check tests phone/tablet/desktop viewports and touch. These do not substitute for real-device iOS Safari testing.
+
+
+## Hambone PLAY Classic Arcade HUD
+
+The original 720×760 canvas and arcade simulation now appear in a clean, portrait-friendly cabinet display. Hambone PLAY v1 is vendored in vendor/hambone-play to avoid runtime cross-site dependencies. The top in-world scorebug displays live score, wave and lives. The original Pause, Sound and Local Top 10 controls keep their event handlers; Sound and Top 10 move into the contextual options tray.
+
+The source graphics, pentipede movement, power-ups, score multipliers, pointer-to-crystal movement, and shooting code remain unchanged. The fixed canvas aspect ratio is preserved instead of stretching or cropping the gameplay area to fill arbitrary phone screens.
+
+The GitHub Pages workflow now includes a Classic Arcade HUD browser test on phone portrait and landscape layouts in addition to the existing physics, bonuses and score tests. Chromium mobile emulation checks interaction and layout; real Safari testing is still useful.

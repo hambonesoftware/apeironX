@@ -1,0 +1,97 @@
+/* Hambone PLAY Classic Arcade · ornate Macintosh-style physical arcade */
+html,body{height:100%;width:100%;overflow:hidden;overscroll-behavior:none}
+body{
+  min-height:100dvh;height:100dvh;display:flex!important;
+  flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(circle at center,#304d37 0%,#14241b 60%,#080d0b 100%)!important
+}
+.site-header,.sidebar,.hud-bottom{display:none!important}
+.shell{
+  width:min(100vw,calc(100dvh * .94737),760px)!important;
+  max-width:760px!important;
+  max-height:100dvh!important;
+  min-height:0!important;
+  display:block!important;margin:0 auto!important;
+  padding:5px!important;
+  border-radius:5px!important;
+  background:linear-gradient(130deg,#8e916d,#35443c 6%,#111914 93%,#78826c)!important;
+  box-shadow:0 0 0 2px #050a07,0 15px 65px #000b!important;
+  flex:0 0 auto!important;
+}
+.field-wrap{width:100%;aspect-ratio:720/760;max-height:calc(100dvh - 10px);position:relative;overflow:hidden}
+#game{
+  width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
+  display:block;aspect-ratio:720/760;touch-action:none
+}
+.field-wrap>.hb-play--arcade{
+  --hb-top:0px;--hb-bottom:0px;
+  --hb-ink:#e7ecda;--hb-muted:#c8bd93;
+  --hb-accent:#d8bb76;--hb-outline:#a18a57a6;
+  --hb-surface:rgba(18,28,24,.91);
+  z-index:30
+}
+.field-wrap .hb-play__scorebug{
+ top:7px;left:7px;max-width:calc(100% - 125px);
+ min-height:43px;background:#101d1be8;
+ border:1px solid #aa905e;border-top:2px solid #dfc17e;
+ border-radius:2px;box-shadow:0 5px 16px #0009;padding:6px 9px;gap:12px
+}
+.field-wrap .hb-play__identity{
+ font:900 12px/1.1 Georgia,serif;letter-spacing:-.01em;color:#e6c17a;
+ max-width:66px
+}
+.field-wrap .hb-play__readouts{gap:11px}
+.field-wrap .hb-play__readout-label{
+ font:800 9px Georgia,serif;letter-spacing:.03em;color:#d2c49e
+}
+.field-wrap .hb-play__readout-value{
+ font:bold 17px/1.1 Georgia,serif;color:#8cd8d2;text-shadow:0 0 4px #218d8166
+}
+.field-wrap .hb-play__utilities{top:6px;right:7px;gap:6px}
+.field-wrap .hb-play__utilities button{
+ background:linear-gradient(#4d5440,#202d25);color:#f9e9bd;
+ border:1px solid #b7a36d;border-radius:4px;
+ min-width:48px;min-height:44px;padding:7px;font-size:13px
+}
+.field-wrap .hb-play__utilities #hb-arcade-options{font-size:22px}
+.field-wrap .hb-play__actions{display:none}
+.field-wrap .hb-play__status{
+ left:50%;transform:translateX(-50%);bottom:11px;
+ border:1px solid #d0a75c;border-radius:4px;
+ font:900 11px/1.3 Georgia,serif;text-transform:uppercase;
+ max-width:calc(100% - 20px);text-align:center;background:#172b28dd
+}
+.field-wrap .hb-play__tray{
+ width:min(300px,calc(100% - 18px));right:8px;bottom:auto;
+ top:56px;max-height:min(48dvh,240px);
+ background:linear-gradient(150deg,#30402f,#111a17);
+ border:1px solid #bea470;border-radius:6px;
+ box-shadow:0 9px 24px #000d;
+}
+.field-wrap .hb-play__tray-head{border-bottom:1px solid #927e5077;padding-bottom:8px}
+.hb-arcade-controls{display:grid;gap:10px}
+.hb-arcade-controls button{
+ min-height:44px;width:100%;color:#f7e8bf;
+ background:linear-gradient(#566447,#26352b);
+ border:1px solid #af9d72;border-radius:5px;
+ font-size:12px;text-align:center
+}
+.field-wrap:has(.overlay:not(.hidden)) .hb-play{display:none!important}
+#floating{z-index:32}
+@media(max-width:540px){
+ .shell{padding:3px!important}
+ .field-wrap .hb-play__scorebug{gap:8px;padding:5px 7px;max-width:calc(100% - 117px)}
+ .field-wrap .hb-play__identity{display:none}
+ .field-wrap .hb-play__readouts{gap:10px}
+ .field-wrap .hb-play__readout-value{font-size:15px}
+ .field-wrap .hb-play__readout-label{font-size:8px}
+ .field-wrap .hb-play__utilities button{font-size:11px;padding:5px;min-width:45px}
+ .field-wrap .hb-play__utilities #hb-arcade-options{font-size:20px}
+}
+@media(max-width:365px){
+ .field-wrap .hb-play__readouts{gap:6px}
+ .field-wrap .hb-play__readout-value{font-size:13px}
+}
+@media(prefers-reduced-motion:reduce){
+ .field-wrap .hb-play *{animation:none!important;transition:none!important}
+}

@@ -119,6 +119,8 @@ html,body{overscroll-behavior:none}
 @media(max-width:680px){ #yummyStatus{font-size:8px;} }
 
 </style>
+<link rel="stylesheet" href="./vendor/hambone-play/hambone-play.css?v=1.0.0">
+<link rel="stylesheet" href="./play-arcade.css?v=1.0.0">
 </head>
 <body>
 <header class="site-header">
@@ -745,5 +747,6 @@ $("primaryBtn").addEventListener("click",resetGame);
 living.reset(1);seedMushrooms();createPentipede();syncHud();requestAnimationFrame(loop);
 })();
 </script>
+<script type="module" src="./play-arcade.js?v=1.0.0"></script>
 </body>
 </html>

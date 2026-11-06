@@ -12,5 +12,6 @@ assert(adapter.includes('hud.bindReadout(score,"score")'));
 assert(css.includes(".site-header,.sidebar,.hud-bottom{display:none!important}"));
 assert(common.includes('export function createPlayHUD'));
 assert(css.includes('content:"APEIRON X"'));
-assert(css.includes('DRAG TO MOVE  ·  AUTO-FIRE'));
+assert(css.includes('DRAG TO STEER  ·  HOLD TO FIRE'));
+assert(adapter.includes('touchModeBtn'),"Touch mode toggle must be exposed in HUD options");
 console.log("Hambone PLAY Classic Arcade adapter static QA passed.");

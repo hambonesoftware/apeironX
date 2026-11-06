@@ -44,7 +44,7 @@
     }
     function fieldLayer(ctx) {
       if(amount<=.01)return;
-      const quiet=Boolean(reduce()),t=elapsed;
+      const quiet=Boolean(reduce()),t=quiet?0:elapsed;
       ctx.save();
       ctx.globalAlpha=amount*(quiet?.14:.22);
       ctx.globalCompositeOperation="screen";
@@ -65,7 +65,7 @@
     }
     function mushroomAuras(ctx,mushrooms) {
       if(amount<=.03||!Array.isArray(mushrooms))return;
-      const quiet=Boolean(reduce()),t=elapsed;
+      const quiet=Boolean(reduce()),t=quiet?0:elapsed;
       ctx.save();
       ctx.globalCompositeOperation="screen";
       ctx.lineWidth=1.25;ctx.globalAlpha=amount*(quiet?.34:.57);
@@ -81,7 +81,7 @@
     }
     function highlight(ctx,state={}) {
       if(amount<=.02)return;
-      const quiet=Boolean(reduce()),t=elapsed;
+      const quiet=Boolean(reduce()),t=quiet?0:elapsed;
       const groups=state.groups||[],critters=state.critters||[],pickups=state.pickups||[];
       const player=state.player;
       ctx.save();
@@ -110,7 +110,7 @@
     }
     function finale(ctx) {
       if(amount<=.02)return;
-      const quiet=Boolean(reduce()),t=elapsed;
+      const quiet=Boolean(reduce()),t=quiet?0:elapsed;
       ctx.save();
       ctx.globalCompositeOperation="screen";
       ctx.globalAlpha=amount*(quiet?.21:.43);
@@ -129,7 +129,7 @@
     }
     function shotColor(shot,index=0) {
       if(amount<=.02)return null;
-      return rainbow(elapsed,index*63+((shot?.x||0)*.17),72,.96);
+      return rainbow(reduce()?0:elapsed,index*63+((shot?.x||0)*.17),72,.96);
     }
     function state() {
       return {active,amount,elapsed,remaining,pulses,reducedMotion:Boolean(reduce())};

@@ -100,7 +100,8 @@
         if(!Array.isArray(g.segments))continue;
         for(let j=0;j<g.segments.length&&seen<27;j++,seen++){
           const s=g.segments[j];
-          if(s)glow(s.x,s.y,13,j+seen*.6);
+          const p=typeof options.position==="function"?options.position(g,j):s;
+          if(p)glow(p.x,p.y,13,j+seen*.6);
         }
       }
       for(let i=0;i<critters.length&&i<5;i++)glow(critters[i].x,critters[i].y,26,7+i);

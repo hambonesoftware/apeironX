@@ -48,7 +48,7 @@ jobs:
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
       - name: Validate mobile and desktop gameplay
-        run: node --test tests/browser-yummies.test.cjs
+        run: node --test tests/browser-yummies.test.cjs tests/browser-psychedelic.test.cjs
       - name: Upload browser screenshots
         if: always()
         uses: actions/upload-artifact@v4

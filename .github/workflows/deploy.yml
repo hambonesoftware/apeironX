@@ -37,6 +37,7 @@ jobs:
           node tests/bot-play.test.cjs
           node tests/arcade-feel.test.cjs
           node tests/psychedelic.test.cjs
+          node tests/app-icons.test.cjs
       - name: Install Chromium test runner
         run: |
           npm install --no-save playwright@1.56.1
@@ -59,7 +60,8 @@ jobs:
       - name: Stage only deployable browser assets
         run: |
           mkdir -p site
-          cp index.html art.js living-patch.js psychedelic-fx.js arcade-director.js arcade-scores.js apeiron-bonuses.js play-arcade.js play-arcade.css .nojekyll site/
+          cp index.html manifest.webmanifest apple-touch-icon.png art.js living-patch.js psychedelic-fx.js arcade-director.js arcade-scores.js apeiron-bonuses.js play-arcade.js play-arcade.css .nojekyll site/
+          cp -R icons site/
           cp -R vendor site/
       - name: Upload static HTML game
         uses: actions/upload-pages-artifact@v4

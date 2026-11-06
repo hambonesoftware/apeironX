@@ -2,7 +2,7 @@
 /* Headless game-loop playtesting, not a substitute for actual human/iPhone testing. */
 const fs=require("node:fs"),path=require("node:path"),vm=require("node:vm"),assert=require("node:assert/strict");
 const root=path.join(__dirname,"..");
-const files=["apeiron-bonuses.js","art.js","living-patch.js","arcade-director.js","arcade-scores.js"];
+const files=["apeiron-bonuses.js","art.js","living-patch.js","psychedelic-fx.js","arcade-director.js","arcade-scores.js"];
 const code=files.map(file=>[file,fs.readFileSync(path.join(root,file),"utf8")]);
 const html=fs.readFileSync(path.join(root,"index.html"),"utf8");
 const inline=html.match(/<script>\s*([\s\S]*?)<\/script>/);

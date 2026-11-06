@@ -1,0 +1,26 @@
+{
+  "name": "Apeiron X — Arcade Classic",
+  "short_name": "Apeiron X",
+  "description": "A mushroom-patch arcade shooter, reimagined for your Home Screen.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#08140e",
+  "theme_color": "#131a10",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -21,6 +21,18 @@ If the link gives a 404, open [Settings → Pages](https://github.com/hambonesof
 
 Audio starts after pressing **Enter the Patch** (browser autoplay policy). **Sound On/Off** in the top bar.
 
+## Psychedelic Mushroom World Shift (November 2026)
+
+Destroying a **psychedelic mushroom** activates the existing eight-second ×10 scoring frenzy and now transforms the whole on-screen experience. The world retains exact collision geometry and controls; the change is purely visual.
+
+- The entire 720×760 playing field cycles gradually through saturated hues, including grass, enemies, mushrooms, crystal, and collectible coins.
+- Soft radial color waves drift across the terrain; mushroom halos, Pentipede segment halos, and glowing rings around every creature family add motion without requiring large shader textures.
+- Plasma shots turn rainbow-colored and retain the corrected forward-moving projectile streaks. The crystal, enemies, and coins have independently colored aura outlines.
+- Concentric psychedelic patterns animate over the playfield; the Classic Arcade scorebug, status label, and controls receive gently changing neon borders.
+- Effects fade in and out rather than abruptly popping; pausing freezes their simulation, and a new game resets everything. There are no fast strobe flashes or changes to hitboxes.
+- If the OS requests **Reduce Motion**, the world shifts to a static softer palette and fewer light pools; pulsing and animated color cycling are disabled.
+- The effect is independent, dependency-free code in `psychedelic-fx.js`, with a dedicated `tests/psychedelic.test.cjs` covering lifetime, pausing, colors, reduced motion, and reset behavior.
+
 ## Arcade Control Fidelity update (Nov 2026)
 
 A targeted gameplay-feel revision based on original Macintosh descriptions of precise mouse control and automatic repeated shots.

@@ -10,6 +10,9 @@ on:
       - 'apeiron-bonuses.js'
       - 'arcade-director.js'
       - 'arcade-scores.js'
+      - 'manifest.webmanifest'
+      - 'apple-touch-icon.png'
+      - 'icons/**'
       - 'tests/**'
       - '.github/workflows/arcade-tests.yml'
   pull_request:
@@ -19,6 +22,9 @@ on:
       - 'living-patch.js'
       - 'psychedelic-fx.js'
       - 'apeiron-bonuses.js'
+      - 'manifest.webmanifest'
+      - 'apple-touch-icon.png'
+      - 'icons/**'
       - 'tests/**'
 jobs:
   smoke:
@@ -43,6 +49,7 @@ jobs:
           node tests/bot-play.test.cjs
           node tests/arcade-feel.test.cjs
           node tests/psychedelic.test.cjs
+          node tests/app-icons.test.cjs
       - name: Install Chromium test runner
         run: |
           npm install --no-save playwright@1.56.1

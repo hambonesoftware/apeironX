@@ -12,6 +12,17 @@ If the link gives a 404, open [Settings → Pages](https://github.com/hambonesof
 - **Folder:** / (root)
 - Press **Save**. GitHub normally publishes the page within a few minutes.
 
+## Home Screen icon — Arcade Classic
+
+The selected **Arcade Classic** app icon (red Pentipede, green eyes, painted mushrooms, gold Apeiron X lettering and blue crystal) is installed in the project:
+
+- `apple-touch-icon.png` — 180 × 180 PNG for iPhone and iPad Safari's **Add to Home Screen** option
+- `icons/icon-192.png` and `icons/icon-512.png` — PWA images for Android and other supported browsers
+- `manifest.webmanifest` — standalone display settings, app name, project-relative `./` scope and launch URL
+- `tests/app-icons.test.cjs` — checks real PNG file headers, icon dimensions, manifest paths and Apple metadata
+
+To add it on iPhone, open the live URL in **Safari**, tap **Share**, then **Add to Home Screen**. If you already have a Home Screen shortcut showing an older icon, remove that shortcut and add it again—iOS often caches installed icons.
+
 ## Controls
 
 | Platform | Move | Fire | Pause |

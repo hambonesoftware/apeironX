@@ -219,6 +219,7 @@ const $=id=>document.getElementById(id);
 const artwork=window.ApeironArt, yummies=window.ApeironBonuses;
 const psy=window.ApeironPsychedelic.create({
  field:document.querySelector(".field-wrap"),canvas,width:W,height:H,
+ position:(group,segment)=>artwork.pentipedePosition(group,segment),
  reduceMotion:()=>Boolean(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)
 });
 let mode="menu",wave=1,score=0,lives=3,bonus=4500,multiplier=1;

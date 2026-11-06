@@ -110,6 +110,53 @@ html,body{overscroll-behavior:none}
  .sidebar{height:auto;max-height:none;min-height:0;overflow:hidden}
  .site-header{height:35px;min-height:35px}
 }
+
+/* Psychedelic ×10: color-grade the entire world, without distorting touch coordinates.
+   Visuals do not modify simulation or HUD dimensions. */
+@keyframes apeiron-psy-spectrum {
+  0%   {filter:hue-rotate(0deg) saturate(1.30) contrast(1.04)}
+  25%  {filter:hue-rotate(90deg) saturate(1.50) contrast(1.06)}
+  50%  {filter:hue-rotate(190deg) saturate(1.48) contrast(1.06)}
+  75%  {filter:hue-rotate(280deg) saturate(1.5) contrast(1.04)}
+  100% {filter:hue-rotate(360deg) saturate(1.30) contrast(1.04)}
+}
+@keyframes apeiron-psy-border {
+  0%   {border-color:#dc8afb;box-shadow:0 0 13px #df62ff91, inset 0 0 10px #ed75ff43}
+  33%  {border-color:#70efca;box-shadow:0 0 15px #51fddd85,inset 0 0 11px #4bedaa40}
+  66%  {border-color:#f6de66;box-shadow:0 0 15px #ffbc3b82,inset 0 0 11px #fecb5040}
+  100% {border-color:#dc8afb;box-shadow:0 0 13px #df62ff91,inset 0 0 10px #ed75ff43}
+}
+.field-wrap.is-psychedelic #game {
+  animation:apeiron-psy-spectrum 5.8s linear infinite;
+}
+.field-wrap.is-psychedelic {
+  animation:apeiron-psy-border 3.6s ease-in-out infinite;
+  isolation:isolate;
+}
+.field-wrap.is-psychedelic .hb-play__scorebug,
+.field-wrap.is-psychedelic .hb-play__status,
+.field-wrap.is-psychedelic .hb-play__utilities button {
+  animation:apeiron-psy-border 4.2s ease-in-out infinite;
+}
+.field-wrap.is-psychedelic .hb-play__readout-value {
+  color:#fff5aa;
+  text-shadow:0 0 5px #fa69d9,0 0 11px #60e9ee;
+}
+.field-wrap.psy-paused #game,
+.field-wrap.psy-paused .hb-play__scorebug,
+.field-wrap.psy-paused .hb-play__status,
+.field-wrap.psy-paused .hb-play__utilities button {
+  animation-play-state:paused;
+}
+@media(prefers-reduced-motion:reduce) {
+ .field-wrap.is-psychedelic #game{animation:none;filter:hue-rotate(42deg) saturate(1.2)}
+ .field-wrap.is-psychedelic,
+ .field-wrap.is-psychedelic .hb-play__scorebug,
+ .field-wrap.is-psychedelic .hb-play__status,
+ .field-wrap.is-psychedelic .hb-play__utilities button {
+   animation:none;border-color:#cbb7f8;
+ }
+}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto;transition:none!important}}
 
 
@@ -160,6 +207,7 @@ html,body{overscroll-behavior:none}
 <script src="apeiron-bonuses.js?v=20261102-ambrosia"></script>
  <script src="art.js?v=20261102-yummies"></script>
 <script src="living-patch.js?v=20261101-v04"></script>
+<script src="psychedelic-fx.js?v=20261105-psy1"></script>
 <script src="arcade-director.js?v=20261101-v05"></script>
 <script src="arcade-scores.js?v=20261101-v05"></script>
 <script>
@@ -169,6 +217,10 @@ const canvas=document.getElementById("game"),ctx=canvas.getContext("2d",{alpha:f
 const W=720,H=760,STEP=30,PLAY_TOP=H-178,TAU=Math.PI*2;
 const $=id=>document.getElementById(id);
 const artwork=window.ApeironArt, yummies=window.ApeironBonuses;
+const psy=window.ApeironPsychedelic.create({
+ field:document.querySelector(".field-wrap"),canvas,width:W,height:H,
+ reduceMotion:()=>Boolean(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+});
 let mode="menu",wave=1,score=0,lives=3,bonus=4500,multiplier=1;
 let best=0;try{best=Number(localStorage.getItem("apeiron-tribute-best"))||0}catch(e){}
 let player={x:360,y:701,tx:360,ty:701,inv:0,rapid:0,spread:0,shield:0,guided:0,ricochet:0,ghost:0,lock:false,frenzy:0};
@@ -352,7 +404,7 @@ function createPentipede(){groups=[];const length=Math.min(10+Math.floor(wave*.6
 function resetGame(){
  mode="playing";score=0;wave=1;lives=3;multiplier=1;bonus=4500;elapsed=0;
  spawnTimer=6.2;flash=0;shotTimer=0;firing=false;activePointerId=null;runTime=0;scoreSubmitted=false;shots=[];particles=[];pickups=[];critters=[];
- director.start(1);
+ director.start(1);psy.reset();
  player={x:360,y:701,tx:360,ty:701,inv:2,rapid:0,spread:0,shield:0,guided:0,ricochet:0,ghost:0,lock:false,frenzy:0};
  living.reset(wave);seedGrass();seedMushrooms();createPentipede();hideOverlay();
  syncHud();audioReady();sfx.wave();
@@ -649,6 +701,7 @@ function update(dt){
  updateGroups(dt);updateCritters(dt);
  living.update(dt);
  updateShots(dt);updatePickups(dt);updateParticles(dt);
+ psy.update(dt,player.frenzy,mode==="playing");
  resolvePlayerContacts();
  if(Math.floor(elapsed*8)!==Math.floor((elapsed-dt)*8))syncHud();
 }
@@ -703,9 +756,10 @@ function drawCritters(){artwork.drawCritters(ctx,critters,frameTime)}
 function drawCrystal(){artwork.drawCrystal(ctx,player,frameTime)}
 function drawShots(){
  ctx.save();ctx.lineCap="round";
- for(const s of shots){
+ for(let i=0;i<shots.length;i++){
+  const s=shots[i];
   const v=Math.hypot(s.vx,s.vy)||1,ux=s.vx/v,uy=s.vy/v;
-  ctx.strokeStyle=s.guided?"#aaffb2":s.ricochet?"#e1b4ff":"#b8faff";
+  ctx.strokeStyle=psy.shotColor(s,i)|| (s.guided?"#aaffb2":s.ricochet?"#e1b4ff":"#b8faff");
   ctx.lineWidth=s.guided?3.2:2.7;ctx.shadowBlur=8;
   ctx.shadowColor=s.guided?"#5bff8c":s.ricochet?"#c18cff":"#58ccff";
   ctx.beginPath();ctx.moveTo(s.x-ux*17,s.y-uy*17);
@@ -722,7 +776,9 @@ function render(){
  const offset=living.cameraShake();
  ctx.save();ctx.translate(offset.x,offset.y);
  ctx.drawImage(grass,0,0);
+ psy.fieldLayer(ctx);
  drawMushrooms();drawPickups();drawCritters();drawPentipedes();
+ psy.mushroomAuras(ctx,mushrooms);
  drawShots();drawCrystal();
  if(player.muzzle>0&&mode==="playing"){
   ctx.save();ctx.globalAlpha=Math.min(1,player.muzzle/.065);
@@ -732,6 +788,8 @@ function render(){
  }
  drawParticles();
  living.render(ctx,artwork);
+ psy.highlight(ctx,{groups,critters,pickups,player});
+ psy.finale(ctx);
  ctx.fillStyle=vignette;ctx.fillRect(0,0,W,H);
  if(flash>0){ctx.fillStyle="rgba(210,243,255,"+(flash*.8)+")";ctx.fillRect(0,0,W,H)}
  if(mode==="menu"){ctx.fillStyle="#102b1a16";ctx.fillRect(0,0,W,H)}
@@ -739,7 +797,14 @@ function render(){
  $("floating").style.opacity=floatingTime>0?String(Math.min(1,floatingTime*1.7)):"0";
 }
 let lastTime=0;
-function loop(timestamp){const dt=Math.min(.045,(timestamp-lastTime)/1000||.016);lastTime=timestamp;frameTime+=dt;floatingTime=Math.max(0,floatingTime-dt);if(mode==="playing")update(dt);else if(mode==="between")tickBetween(dt);else updateParticles(dt);render();requestAnimationFrame(loop)}
+function loop(timestamp){
+ const dt=Math.min(.045,(timestamp-lastTime)/1000||.016);
+ lastTime=timestamp;frameTime+=dt;floatingTime=Math.max(0,floatingTime-dt);
+ if(mode==="playing")update(dt);
+ else if(mode==="between"){tickBetween(dt);psy.update(dt,player.frenzy,true)}
+ else{updateParticles(dt);psy.update(0,player.frenzy,false)}
+ render();requestAnimationFrame(loop);
+}
 function moveCrystalTo(x,y){
  const targetX=clamp(x,24,W-24),targetY=clamp(y,PLAY_TOP+8,H-31);
  player.tx=targetX;player.ty=targetY;

@@ -49,7 +49,7 @@ const store=new Map();
 const localStorage={getItem(k){return store.get(k)||null},setItem(k,v){store.set(k,v)}};
 const sandbox=vm.createContext({window,document,localStorage,Date,Math,console,
  requestAnimationFrame(){},performance:{now(){return 0}}});
-for(const name of ["apeiron-bonuses.js","art.js","living-patch.js","arcade-director.js","arcade-scores.js"]){
+for(const name of ["apeiron-bonuses.js","art.js","living-patch.js","psychedelic-fx.js","arcade-director.js","arcade-scores.js"]){
  vm.runInContext(fs.readFileSync(path.join(root,name),"utf8"),sandbox,{filename:name,timeout:15000});
 }
 vm.runInContext(injected,sandbox,{filename:"index.js",timeout:15000});

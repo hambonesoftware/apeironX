@@ -219,4 +219,47 @@ st=t.inspect();
 assert.ok(st.groups.every(group=>group.segments.every(s=>Number.isFinite(s.x)&&Number.isFinite(s.y))));
 assert.ok(st.mushrooms.length<=265);
 assert.ok(st.lives>=0&&st.lives<=8);
+
+// Regression: dense mushroom fields used to make the Pentipede flip direction
+// forever without ever moving away from its current row.
+t.resetGame();
+let movingGroup=t.inspect().groups[0];
+const visited=new Set();
+let lastPosition="",stationaryFrames=0,maxStationaryFrames=0;
+for(let frame=0;frame<60*40;frame++){
+ t.updateGroups(1/60);
+ const h=movingGroup.segments[0],key=h.x+","+h.y;
+ visited.add(key);
+ if(key===lastPosition)stationaryFrames++;
+ else stationaryFrames=0;
+ maxStationaryFrames=Math.max(maxStationaryFrames,stationaryFrames);
+ lastPosition=key;
+ assert.ok((movingGroup.verticalStreak||0)<=2,"Pentipede may not plunge through multiple rows");
+}
+assert.ok(visited.size>=35,"Pentipede must continue moving through 40 seconds of dense mushrooms");
+assert.ok(maxStationaryFrames<60*3,"Pentipede must not remain in one cell for three seconds");
+
+// Force the exact deadlock: mushrooms on both lateral sides across four rows.
+t.resetGame();
+const trapped=t.inspect(),trappedGroup=trapped.groups[0];
+trapped.mushrooms.splice(0);
+trappedGroup.segments.splice(1);
+Object.assign(trappedGroup.segments[0],{
+ x:360,y:120,prevX:360,prevY:120,olderX:330,olderY:120
+});
+trappedGroup.dir=1;trappedGroup.acc=0;
+trappedGroup.horizontalSinceDrop=2;trappedGroup.verticalStreak=0;
+for(const row of [120,150,180,210])for(const x of [330,390]){
+ trapped.mushrooms.push({x,y:row,hp:2,kind:"normal",variant:0});
+}
+let minX=360,maxX=360,verticalMax=0;
+for(let frame=0;frame<60*12;frame++){
+ t.updateGroups(1/60);
+ const h=trappedGroup.segments[0];
+ minX=Math.min(minX,h.x);maxX=Math.max(maxX,h.x);
+ verticalMax=Math.max(verticalMax,trappedGroup.verticalStreak||0);
+}
+assert.ok(maxX-minX>=90,"Trapped Pentipede must escape and crawl horizontally");
+assert.ok(verticalMax<=2,"Escape routing must never become a straight plunge");
+
 console.log("PASS Apeiron X v0.6: sprites, guided/ricochet, life cap, falling mushrooms, magic, poison, splitting, touchdown, cleanup and 1,200-frame render.");

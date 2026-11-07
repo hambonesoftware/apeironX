@@ -32,6 +32,18 @@ To add it on iPhone, open the live URL in **Safari**, tap **Share**, then **Add 
 
 Audio starts after pressing **Enter the Patch** (browser autoplay policy). **Sound On/Off** in the top bar.
 
+## Bonus and Pentipede pacing (November 2026)
+
+The reward pacing and Pentipede navigation were retuned following mobile gameplay feedback.
+
+- **Every collectible coin now remains on screen for at most 10 gameplay seconds**, fading visibly before disappearing.
+- **Collected temporary powers last 10 gameplay seconds:** machine gun, guided shots, Diamond/pass-through, shield, triple plasma, ricochet, and Yummy Lock. Collecting the same power again refreshes its full clock. Yummy Lock still protects unexpired powers on death, but never makes them permanent.
+- **The score multiplier lasts 10 seconds**, then resets to ×1. Extra-life and mushroom-cleanup coins remain one-time effects, not temporary power states.
+- **Psychedelic mushrooms now give 10 seconds of ×10 frenzy**, including the color-shifting visuals, instead of 8.
+- **The Pentipede starts approximately 21% slower** and moves predominantly across the field. Colliding with a mushroom or boundary can move it one 30-pixel row up/down, but it must make at least two horizontal steps before another ordinary descent; poison can force one immediate row change, not a vertical plunge.
+- **Fixed an upper-field routing bug:** encountering a poison mushroom no longer marks the Pentipede as having reached the player's lower field or causes a huge vertical reposition.
+- Expanded the headless smoke tests to cover bonus timers, refresh, expiry, and toxic single-row movement.
+
 ## Psychedelic Mushroom World Shift (November 2026)
 
 Destroying a **psychedelic mushroom** activates the existing eight-second ×10 scoring frenzy and now transforms the whole on-screen experience. The world retains exact collision geometry and controls; the change is purely visual.

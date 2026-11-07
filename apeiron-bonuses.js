@@ -56,10 +56,10 @@
   }
   function powerText(player) {
     const active=[];
-    if(player.rapid>0)active.push("MACHINE GUN");
-    if(player.guided>0)active.push("GUIDED");
-    if(player.ghost>0)active.push("DIAMOND");
-    if(player.lock)active.push("LOCKED");
+    if(player.rapid>0)active.push("MACHINE GUN "+Math.ceil(player.rapid)+"s");
+    if(player.guided>0)active.push("GUIDED "+Math.ceil(player.guided)+"s");
+    if(player.ghost>0)active.push("DIAMOND "+Math.ceil(player.ghost)+"s");
+    if(player.lock)active.push("LOCKED "+Math.ceil(player.lockTime||0)+"s");
     if(player.shield>0)active.push("SHIELD "+Math.ceil(player.shield)+"s");
     if(player.frenzy>0)active.push("PSYCHEDELIC ×10 "+Math.ceil(player.frenzy)+"s");
     return active;

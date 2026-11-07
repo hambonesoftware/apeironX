@@ -466,7 +466,7 @@
       const glow = p.type === "multiplier" ? "#ffdf55" : p.type === "shield" || p.type === "ghost" ? "#8beaff" :
         p.type === "lock" ? "#ffe1aa" : p.type === "life" ? "#97f8aa" : "#ffc76a";
       g.save();
-      g.globalAlpha = Math.max(0, Math.min(1, (14 - p.time) * .72));
+      g.globalAlpha = Math.max(0, Math.min(1, (10 - p.time) * .72));
       g.fillStyle = "rgba(22,22,12,.24)";
       g.beginPath();g.ellipse(p.x + 3, p.y + 20, 15, 4.5, 0, 0, TAU);g.fill();
       g.translate(p.x, y);

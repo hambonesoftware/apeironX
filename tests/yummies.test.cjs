@@ -38,7 +38,8 @@ assert.equal(player.rapid,Infinity);
 assert.equal(player.guided,Infinity);
 assert.equal(player.ghost,Infinity);
 assert.equal(player.shield,0);
-assert.ok(Y.powerText(player).includes("LOCKED"));
+player.lockTime=10;
+assert.ok(Y.powerText(player).some(text=>text.startsWith("LOCKED 10s")));
 let counts=Object.fromEntries(expected.map(x=>[x,0]));
 let state=18444;
 for(let k=0;k<10000;k++){

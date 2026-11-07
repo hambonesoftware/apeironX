@@ -386,16 +386,55 @@ function seedMushrooms(){
   addMushroom(x,y,kind,chance(.24)?3:2);
  }
 }
+function obstructingMushroom(x,y){
+ return mushrooms.find(m=>Math.abs(m.x-x)<22&&Math.abs(m.y-y)<20);
+}
+function openHeadLane(x,y){
+ return x>=22&&x<=W-22&&!obstructingMushroom(x,y);
+}
+// Plan the next whole-grid step without changing the game state.
+// Both the animation lookahead and the simulation use this same plan.
+function planHeadStep(g){
+ const head=g.segments[0];
+ const ahead=head.x+g.dir*STEP;
+ const obstacle=obstructingMushroom(ahead,head.y);
+ const blocked=ahead<22||ahead>W-22||!!obstacle;
+ if(!blocked)return {x:ahead,y:head.y,dir:g.dir,kind:"horizontal"};
+ const reverse=-g.dir,reverseX=head.x+reverse*STEP;
+ const canReverse=openHeadLane(reverseX,head.y);
+ const poisoned=!!obstacle&&obstacle.kind==="toxic"&&(g.poisonCooldown||0)<=0;
+ const needsDrop=!!g.dive||poisoned||(g.horizontalSinceDrop||0)>=2||!canReverse;
+ if(needsDrop&&(g.verticalStreak||0)<2){
+  const lower=!!g.lower||head.y>PLAY_TOP-35;
+  let vdir=lower?(g.vdir||1):1;
+  if(lower){
+   if(head.y>=H-62)vdir=-1;
+   else if(head.y<PLAY_TOP-20)vdir=1;
+  }
+  const minY=lower?PLAY_TOP-25:36;
+  let targetY=clamp(head.y+vdir*STEP,minY,H-58);
+  if(targetY===head.y){
+   vdir=-vdir;
+   targetY=clamp(head.y+vdir*STEP,minY,H-58);
+  }
+  if(targetY!==head.y){
+   return {x:head.x,y:targetY,dir:reverse,kind:"vertical",vdir,
+    poison:poisoned};
+  }
+ }
+ if(canReverse){
+  return {x:reverseX,y:head.y,dir:reverse,kind:"horizontal"};
+ }
+ // Two back-to-back row changes without an escape lane are a deadlock.
+ // Break through the blocking mushroom rather than flip forever or dive
+ // straight toward the bottom. This happens only when both sides are blocked.
+ const escapeX=(reverseX>=22&&reverseX<=W-22)?reverseX:ahead;
+ return {x:escapeX,y:head.y,dir:reverse,kind:"horizontal",
+  clearAt:{x:escapeX,y:head.y}};
+}
 function predictHeadCell(g){
- const head=g.segments[0],ahead=head.x+g.dir*STEP;
- const blocked=ahead<22||ahead>W-22||mushrooms.some(m=>Math.abs(m.x-ahead)<22&&Math.abs(m.y-head.y)<20);
- if(!blocked)return {x:ahead,y:head.y};
- if(g.horizontalSinceDrop<2 && !g.dive)return {x:head.x,y:head.y};
- if(!g.lower)return {x:head.x,y:clamp(head.y+STEP,36,H-58)};
- let vdir=g.vdir;
- if(head.y>=H-62)vdir=-1;
- if(head.y<PLAY_TOP-20)vdir=1;
- return {x:head.x,y:clamp(head.y+vdir*STEP,PLAY_TOP-25,H-58)};
+ const next=planHeadStep(g);
+ return {x:next.x,y:next.y};
 }
 function newGroup(segments,dir,phase=0){
  if(!segments.length)return;
@@ -403,7 +442,7 @@ function newGroup(segments,dir,phase=0){
   if(!Number.isFinite(s.prevX)){s.prevX=s.x;s.prevY=s.y}
   if(!Number.isFinite(s.olderX)){s.olderX=s.prevX;s.olderY=s.prevY}
  }
- const group={segments,dir:dir||1,speed:clamp(4.85+wave*.25,5.1,10.5),acc:clamp(phase,0,.999),lower:segments[0].y>PLAY_TOP-28,vdir:1,color:rnd(-8,8),next:null,horizontalSinceDrop:2,poisonCooldown:0,dive:false};
+ const group={segments,dir:dir||1,speed:clamp(4.85+wave*.25,5.1,10.5),acc:clamp(phase,0,.999),lower:segments[0].y>PLAY_TOP-28,vdir:1,color:rnd(-8,8),next:null,horizontalSinceDrop:2,verticalStreak:0,poisonCooldown:0,dive:false};
  group.next=predictHeadCell(group);
  groups.push(group);
 }
@@ -524,47 +563,42 @@ function spawnCritter(forcedType){
 function updateGroups(dt){
  for(const g of groups){
   g.acc+=dt*g.speed;
-  let moves=0;
-  while(g.acc>=1&&moves++<4){
+  let steps=0;
+  while(g.acc>=1&&steps++<4){
    g.acc--;
+   const step=planHeadStep(g);
    const head=g.segments[0];
-   const ahead=head.x+g.dir*STEP;
-   const blocker=mushrooms.find(m=>Math.abs(m.x-ahead)<22&&Math.abs(m.y-head.y)<20);
-   const wall=ahead<22||ahead>W-22;
-   const blocked=wall||!!blocker;
-   let nx=ahead,ny=head.y;
-   if(blocked){
-    const poisoned=!!blocker&&blocker.kind==="toxic"&&g.poisonCooldown<=0;
-    if(poisoned)living.poisonTurn(g,blocker);
-    g.dir*=-1;
-    nx=head.x;
-    // Every descent is one cell maximum, followed by at least two horizontal
-    // steps. Poison may force ONE immediate descent, never a vertical plunge.
-    const mayDescend=(g.horizontalSinceDrop||0)>=2 || !!g.dive;
-    if(mayDescend){
-     if(head.y>PLAY_TOP-35)g.lower=true;
-     if(g.lower){
-      if(head.y>=H-62)g.vdir=-1;
-      if(head.y<PLAY_TOP-20)g.vdir=1;
-      ny=clamp(head.y+g.vdir*STEP,PLAY_TOP-25,H-58);
-     }else{
-      ny=clamp(head.y+STEP,36,H-58);
-     }
-     g.horizontalSinceDrop=0;
+   if(step.poison){
+    const poison=obstructingMushroom(head.x+g.dir*STEP,head.y);
+    if(poison)living.poisonTurn(g,poison);
+   }
+   if(step.clearAt){
+    const index=mushrooms.findIndex(m=>
+     Math.abs(m.x-step.clearAt.x)<22&&Math.abs(m.y-step.clearAt.y)<20);
+    if(index>=0){
+     const freed=mushrooms.splice(index,1)[0];
+     burst(freed.x,freed.y,"#a1ce75",8,65);
     }
-    g.dive=false;
+   }
+   if(step.kind==="vertical"){
+    g.horizontalSinceDrop=0;
+    g.verticalStreak=(g.verticalStreak||0)+1;
+    g.vdir=step.vdir;
    }else{
     g.horizontalSinceDrop=Math.min(6,(g.horizontalSinceDrop||0)+1);
+    g.verticalStreak=0;
    }
+   g.dir=step.dir;
+   g.dive=false;
    g.poisonCooldown=Math.max(0,(g.poisonCooldown||0)-1);
-   if(head.y>PLAY_TOP-20)g.lower=true;
-   if(g.lower&&ny>=H-62)g.vdir=-1;
+   if(head.y>PLAY_TOP-35||step.y>PLAY_TOP-35)g.lower=true;
    let previous={x:head.x,y:head.y};
-   for(let i=0;i<g.segments.length;i++){
-    const seg=g.segments[i],next={x:seg.x,y:seg.y};
+   for(let k=0;k<g.segments.length;k++){
+    const seg=g.segments[k];
+    const next={x:seg.x,y:seg.y};
     seg.olderX=seg.prevX;seg.olderY=seg.prevY;
     seg.prevX=seg.x;seg.prevY=seg.y;
-    if(i===0){seg.x=nx;seg.y=ny}
+    if(k===0){seg.x=step.x;seg.y=step.y}
     else{seg.x=previous.x;seg.y=previous.y}
     previous=next;
    }

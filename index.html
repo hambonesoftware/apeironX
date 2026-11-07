@@ -219,6 +219,7 @@ html,body{overscroll-behavior:none}
 (function(){
 const canvas=document.getElementById("game"),ctx=canvas.getContext("2d",{alpha:false});
 const W=720,H=760,STEP=30,PLAY_TOP=H-178,TAU=Math.PI*2;
+const POWER_SECONDS=10, COIN_SECONDS=10;
 const $=id=>document.getElementById(id);
 const artwork=window.ApeironArt, yummies=window.ApeironBonuses;
 const psy=window.ApeironPsychedelic.create({
@@ -226,7 +227,7 @@ const psy=window.ApeironPsychedelic.create({
  position:(group,segment)=>artwork.pentipedePosition(group,segment),
  reduceMotion:()=>Boolean(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches)
 });
-let mode="menu",wave=1,score=0,lives=3,bonus=4500,multiplier=1;
+let mode="menu",wave=1,score=0,lives=3,bonus=4500,multiplier=1,multiplierTime=0;
 let best=0;try{best=Number(localStorage.getItem("apeiron-tribute-best"))||0}catch(e){}
 let player={x:360,y:701,tx:360,ty:701,inv:0,rapid:0,spread:0,shield:0,guided:0,ricochet:0,ghost:0,lock:false,frenzy:0};
 const leaderboard=window.ApeironScores.create();
@@ -389,6 +390,7 @@ function predictHeadCell(g){
  const head=g.segments[0],ahead=head.x+g.dir*STEP;
  const blocked=ahead<22||ahead>W-22||mushrooms.some(m=>Math.abs(m.x-ahead)<22&&Math.abs(m.y-head.y)<20);
  if(!blocked)return {x:ahead,y:head.y};
+ if(g.horizontalSinceDrop<2 && !g.dive)return {x:head.x,y:head.y};
  if(!g.lower)return {x:head.x,y:clamp(head.y+STEP,36,H-58)};
  let vdir=g.vdir;
  if(head.y>=H-62)vdir=-1;
@@ -401,22 +403,22 @@ function newGroup(segments,dir,phase=0){
   if(!Number.isFinite(s.prevX)){s.prevX=s.x;s.prevY=s.y}
   if(!Number.isFinite(s.olderX)){s.olderX=s.prevX;s.olderY=s.prevY}
  }
- const group={segments,dir:dir||1,speed:clamp(6+wave*.42,6,15),acc:clamp(phase,0,.999),lower:segments[0].y>PLAY_TOP-28,vdir:1,color:rnd(-8,8),next:null};
+ const group={segments,dir:dir||1,speed:clamp(4.85+wave*.25,5.1,10.5),acc:clamp(phase,0,.999),lower:segments[0].y>PLAY_TOP-28,vdir:1,color:rnd(-8,8),next:null,horizontalSinceDrop:2,poisonCooldown:0,dive:false};
  group.next=predictHeadCell(group);
  groups.push(group);
 }
 function createPentipede(){groups=[];const length=Math.min(10+Math.floor(wave*.6),18);const arr=[];for(let i=0;i<length;i++)arr.push({x:W-120-i*STEP,y:82});newGroup(arr,1)}
 function resetGame(){
- mode="playing";score=0;wave=1;lives=3;multiplier=1;bonus=4500;elapsed=0;
+ mode="playing";score=0;wave=1;lives=3;multiplier=1;multiplierTime=0;bonus=4500;elapsed=0;
  spawnTimer=6.2;flash=0;shotTimer=0;firing=false;activePointerId=null;runTime=0;scoreSubmitted=false;shots=[];particles=[];pickups=[];critters=[];
  director.start(1);psy.reset();
- player={x:360,y:701,tx:360,ty:701,inv:2,rapid:0,spread:0,shield:0,guided:0,ricochet:0,ghost:0,lock:false,frenzy:0};
+ player={x:360,y:701,tx:360,ty:701,inv:2,rapid:0,spread:0,shield:0,guided:0,ricochet:0,ghost:0,lock:false,lockTime:0,frenzy:0};
  living.reset(wave);seedGrass();seedMushrooms();createPentipede();hideOverlay();
  syncHud();audioReady();sfx.wave();
 }
 function nextWave(){
  wave++;living.reset(wave);director.start(wave);seedGrass();
- bonus=4500+wave*75;multiplier=1;
+ bonus=4500+wave*75;multiplier=1;multiplierTime=0;
  spawnTimer=wave<5?rnd(6,9):Math.max(2.6,6.8-wave*.13);
  player.inv=1.7;critters=[];pickups=[];
  for(let i=0;i<Math.min(18,5+wave);i++)addMushroom(rnd(30,W-30),rnd(85,H-120),chance(.09)?"magic":"normal",2);
@@ -448,15 +450,20 @@ function addPickup(x,y,type){
 }
 function applyPickup(p){
  const t=p.type;
- if(t==="rapid")player.rapid=Infinity;
- if(t==="spread")player.spread=12;
- if(t==="shield")player.shield=Math.max(player.shield||0,12);
- if(t==="guided")player.guided=Infinity;
- if(t==="ghost")player.ghost=Infinity;
- if(t==="lock")player.lock=true;
- if(t==="ricochet")player.ricochet=12;
- if(t==="multi"||t==="multiplier")multiplier=Math.min(8,multiplier*2);
+ // Collecting an identical power refreshes its full 10-second clock.
+ if(t==="rapid")player.rapid=POWER_SECONDS;
+ if(t==="spread")player.spread=POWER_SECONDS;
+ if(t==="shield")player.shield=POWER_SECONDS;
+ if(t==="guided")player.guided=POWER_SECONDS;
+ if(t==="ghost")player.ghost=POWER_SECONDS;
+ if(t==="ricochet")player.ricochet=POWER_SECONDS;
+ if(t==="lock"){player.lock=true;player.lockTime=POWER_SECONDS;}
+ if(t==="multi"||t==="multiplier"){
+  multiplier=Math.min(8,multiplier*2);
+  multiplierTime=POWER_SECONDS;
+ }
  director.onPower();
+ // Extra lives and housekeeping are instantaneous bonuses, not timed states.
  if(t==="life")lives=Math.min(8,lives+1);
  if(t==="cleanse"||t==="guided"||t==="ricochet")living.pickup(t,p.x,p.y);
  score+=250*(player.frenzy>0?10:1);
@@ -520,36 +527,45 @@ function updateGroups(dt){
   let moves=0;
   while(g.acc>=1&&moves++<4){
    g.acc--;
-   const head=g.segments[0],ahead=head.x+g.dir*STEP;
-   const poison=mushrooms.find(m=>Math.abs(m.x-ahead)<22&&Math.abs(m.y-head.y)<20);
-   const blocked=ahead<22||ahead>W-22||!!poison;
+   const head=g.segments[0];
+   const ahead=head.x+g.dir*STEP;
+   const blocker=mushrooms.find(m=>Math.abs(m.x-ahead)<22&&Math.abs(m.y-head.y)<20);
+   const wall=ahead<22||ahead>W-22;
+   const blocked=wall||!!blocker;
    let nx=ahead,ny=head.y;
-   if(g.dive&&head.y<PLAY_TOP+20){
-    nx=head.x;ny=clamp(head.y+STEP,36,H-58);
-   }else{
-    if(g.dive)g.dive=false;
-    if(blocked){
-     if(poison && poison.kind==="toxic")living.poisonTurn(g,poison);
-     g.dir*=-1;nx=head.x;
+   if(blocked){
+    const poisoned=!!blocker&&blocker.kind==="toxic"&&g.poisonCooldown<=0;
+    if(poisoned)living.poisonTurn(g,blocker);
+    g.dir*=-1;
+    nx=head.x;
+    // Every descent is one cell maximum, followed by at least two horizontal
+    // steps. Poison may force ONE immediate descent, never a vertical plunge.
+    const mayDescend=(g.horizontalSinceDrop||0)>=2 || !!g.dive;
+    if(mayDescend){
      if(head.y>PLAY_TOP-35)g.lower=true;
-     if(g.dive){
-      ny=clamp(head.y+STEP,36,H-58);
-     }else if(g.lower){
+     if(g.lower){
       if(head.y>=H-62)g.vdir=-1;
       if(head.y<PLAY_TOP-20)g.vdir=1;
       ny=clamp(head.y+g.vdir*STEP,PLAY_TOP-25,H-58);
-     }else ny=clamp(head.y+STEP,36,H-58);
+     }else{
+      ny=clamp(head.y+STEP,36,H-58);
+     }
+     g.horizontalSinceDrop=0;
     }
+    g.dive=false;
+   }else{
+    g.horizontalSinceDrop=Math.min(6,(g.horizontalSinceDrop||0)+1);
    }
+   g.poisonCooldown=Math.max(0,(g.poisonCooldown||0)-1);
    if(head.y>PLAY_TOP-20)g.lower=true;
    if(g.lower&&ny>=H-62)g.vdir=-1;
    let previous={x:head.x,y:head.y};
    for(let i=0;i<g.segments.length;i++){
-    const s=g.segments[i],next={x:s.x,y:s.y};
-    s.olderX=s.prevX;s.olderY=s.prevY;
-    s.prevX=s.x;s.prevY=s.y;
-    if(i===0){s.x=nx;s.y=ny}
-    else{s.x=previous.x;s.y=previous.y}
+    const seg=g.segments[i],next={x:seg.x,y:seg.y};
+    seg.olderX=seg.prevX;seg.olderY=seg.prevY;
+    seg.prevX=seg.x;seg.prevY=seg.y;
+    if(i===0){seg.x=nx;seg.y=ny}
+    else{seg.x=previous.x;seg.y=previous.y}
     previous=next;
    }
    g.next=predictHeadCell(g);
@@ -682,7 +698,7 @@ function updatePickups(dt){
   }
   if(p.type!=="multiplier"&&distance(p.x,p.y,player.x,player.y)<24){
    pickups.splice(i,1);applyPickup(p);
-  }else if(p.time>14)pickups.splice(i,1);
+  }else if(p.time>=COIN_SECONDS)pickups.splice(i,1);
  }
 }
 function updateParticles(dt){for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=p.gravity*dt;p.vx*=1-dt*.8;if(p.life<=0)particles.splice(i,1)}if(particles.length>650)particles.splice(0,particles.length-650)}
@@ -691,6 +707,10 @@ function update(dt){
  player.inv=Math.max(0,player.inv-dt);
  for(const k of ["rapid","spread","shield","guided","ricochet","ghost","frenzy"])
   player[k]=Math.max(0,(player[k]||0)-dt);
+ player.lockTime=Math.max(0,(player.lockTime||0)-dt);
+ if(player.lockTime===0)player.lock=false;
+ multiplierTime=Math.max(0,multiplierTime-dt);
+ if(multiplierTime===0)multiplier=1;
  bonus=Math.max(0,bonus-dt*(70+wave*5));
  flash=Math.max(0,flash-dt);runTime+=dt;
  const encounter=director.tick(dt,{critters,groups,lives,PLAY_TOP});
@@ -719,19 +739,21 @@ function syncHud(){
  $("lives").innerHTML='<span class="life-icons">'+('<span class="crystal-life"></span>'.repeat(Math.max(0,lives)))+'</span><span class="life-count"><span class="crystal-life"></span>×'+lives+'</span>';
  $("highScore").textContent="BEST "+String(best).padStart(6,"0");
  const powers=[
-  ["PSYCHEDELIC ×10",player.frenzy||0,8],
-  ["SPRINKLY SHIELD",player.shield||0,12],
-  ["MACHINE GUN",player.rapid||0,Infinity],
-  ["GUIDED PLASMA",player.guided||0,Infinity],
-  ["DIAMOND PASS",player.ghost||0,Infinity],
-  ["TRIPLE PLASMA",player.spread||0,12],
-  ["RICOCHET",player.ricochet||0,12]
+  ["PSYCHEDELIC ×10",player.frenzy||0,POWER_SECONDS],
+  ["SPRINKLY SHIELD",player.shield||0,POWER_SECONDS],
+  ["MACHINE GUN",player.rapid||0,POWER_SECONDS],
+  ["GUIDED PLASMA",player.guided||0,POWER_SECONDS],
+  ["DIAMOND PASS",player.ghost||0,POWER_SECONDS],
+  ["TRIPLE PLASMA",player.spread||0,POWER_SECONDS],
+  ["RICOCHET",player.ricochet||0,POWER_SECONDS],
+   ["YUMMY LOCK",player.lockTime||0,POWER_SECONDS],
+   ["SCORE MULTIPLIER ×"+multiplier,multiplierTime||0,POWER_SECONDS]
  ].filter(p=>p[1]>0);
  const active=powers[0];
- const timeLabel=n=>Number.isFinite(n)?Math.ceil(n)+"s":"ON";
+ const timeLabel=n=>Math.ceil(n)+"s";
  $("powerLabel").textContent=active?active[0]+" "+timeLabel(active[1]):"NORMAL PLASMA";
  $("powerFill").style.width=active?(Number.isFinite(active[1])?(100*active[1]/active[2])+"%":"100%"):"0%";
- $("yummyStatus").textContent=(player.lock?"🔒 LOCK ACTIVE · ":"")+
+ $("yummyStatus").textContent=(player.lock?"🔒 LOCK "+Math.ceil(player.lockTime)+"s · ":"")+
   yummies.powerText(player).slice(0,4).join(" · ");
 
 }

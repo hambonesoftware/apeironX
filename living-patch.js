@@ -66,10 +66,11 @@
       return true;
     }
     function poisonTurn(group, mushroom) {
-      if (!mushroom || mushroom.kind!=="toxic" || group.dive) return false;
+      if (!mushroom || mushroom.kind!=="toxic" || (group.poisonCooldown||0)>0) return false;
+      // Toxic mushroom grants a single forced turn/step-down. It must NEVER
+      // change the lower-field flag at high altitude or initiate a long dive.
       group.dive=true;
-      group.lower=true;
-      group.vdir=1;
+      group.poisonCooldown=6;
       ring(mushroom.x,mushroom.y,"#ff5c42",9,.8);
       env.burst(mushroom.x,mushroom.y,"#e35434",18,150);
       env.audio("poison");
@@ -81,7 +82,7 @@
       ring(m.x,m.y,"#ef92ff",18,1.1);
       env.burst(m.x,m.y,"#e9a0ff",32,220);
       points(m.x,m.y,500,"#f9baff");
-      st.player.frenzy=Math.max(st.player.frenzy||0,8);
+      st.player.frenzy=10;
       env.show("PSYCHEDELIC ×10", "#ffb1ff");
       env.audio("magic");
       shake=Math.max(shake,4);
